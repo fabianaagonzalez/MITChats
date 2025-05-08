@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MITChats</title>
-  <script type="importmap">
+  <!-- <script type="importmap">
     {
       "imports": {
         "vue": "https://cdn.jsdelivr.net/npm/vue@3.5.13/dist/vue.esm-browser.js",
@@ -12,14 +12,32 @@
         "@graffiti-garden/wrapper-vue": "https://cdn.jsdelivr.net/npm/@graffiti-garden/wrapper-vue@0.7.2/dist/browser/plugin.mjs"
       }
     }
+  </script> -->
+  <script type="importmap">
+    {
+      "imports": {
+        "vue": "https://cdn.jsdelivr.net/npm/vue@3.5.13/dist/vue.esm-browser.js",
+        "@graffiti-garden/implementation-local": "https://cdn.jsdelivr.net/npm/@graffiti-garden/implementation-local@0.6.4/dist/browser/index.js",
+        "@graffiti-garden/implementation-remote": "https://cdn.jsdelivr.net/npm/@graffiti-garden/implementation-remote/dist/browser/index.js",
+        "@graffiti-garden/wrapper-vue": "https://cdn.jsdelivr.net/npm/@graffiti-garden/wrapper-vue@0.7.2/dist/browser/plugin.mjs"
+      }
+    }
   </script>
+  
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div id="app" :class="{ 'chat-active': selectedChannel }">
     <h1>MITChats</h1>
 
-    <button v-if="!$graffitiSession.value" @click="handleLogin">Log In</button>
+    <!-- <button v-if="!$graffitiSession.value" @click="handleLogin">Log In</button> -->
+    <!-- Welcome Box -->
+    <div class="welcome-box" v-if="!$graffitiSession.value">
+      <h2 id="welcome">Welcome to MITChats!</h2>
+      <p>Connect with your classmates, friends, and community. Log in with your Kerberos ID to get started.</p>
+      <button v-if="!$graffitiSession.value" @click="handleLogin">Log In</button>
+    </div>
+
 
 
     <template v-else>
@@ -29,7 +47,9 @@
         <!-- Show ONLY the Edit Profile view -->
         <div class="profile-edit-background">
           <div class="profile-view">
-            <button @click="$graffiti.logout($graffitiSession.value)" class="log_out">Log Out</button>
+            <!-- <button @click="$graffiti.logout($graffitiSession.value)" class="log_out">Log Out</button> -->
+            <button @click="logout()" class="log_out">Log Out</button>
+
             <h2>Edit Your Profile</h2>
       
             <!-- Profile Picture Upload and Preview -->
@@ -122,6 +142,9 @@
                   {{ getChatDisplayName(chat.channel) }}
                 </div>
                 <button @click="enterChat(chat.channel)">Enter</button>
+                <!-- Apply the class to your buttons -->
+  
+
               </div>
             </li>
           </ul>
@@ -255,9 +278,15 @@
           <div class="fab-container">
             <button class="fab-main" @click="toggleFabMenu">+</button>
             <div v-if="fabMenuOpen" class="fab-menu">
-              <button @click="showGroupForm = true">New Groupchat</button>
+              <!-- <button @click="showGroupForm = true">New Groupchat</button>
               <button @click="createIndividualChat">New Chat</button>
-              <button @click="joinClassChat">Join a Class Chat</button>
+              <button @click="joinClassChat">Join a Class Chat</button> -->
+
+              <!-- Apply the class to your buttons -->
+              <button @click="showGroupForm = true" class="button-pulse">New Groupchat</button>
+              <button @click="createIndividualChat" class="button-pulse">New Chat</button>
+              <button @click="joinClassChat" class="button-pulse">Join a Class Chat</button>
+
             </div>
           </div>
         </template>
@@ -265,7 +294,11 @@
         <!-- Profile View -->
         <template v-if="viewingProfile">
           <div class="profile-view">
-            <button class="back-button" @click="exitProfile">← Back</button>
+            <!-- <button class="back-button" @click="exitProfile">← Back</button> -->
+            <div class="back-button-container">
+              <button class="back-button" @click="exitProfile">← Back</button>
+            </div>
+            
             <h2>{{ getChatDisplayName(selectedChannel) }}</h2>
 
             <div class="profile-tabs">
@@ -273,21 +306,156 @@
               <button :class="{ active: profileTab === 'preferences' }" @click="profileTab = 'preferences'">Preferences</button>
             </div>
 
-            <div v-if="profileTab === 'participants'">
+            <!-- <div v-if="profileTab === 'participants'">
+              
               <ul>
                 <li v-for="member in getChatParticipants(selectedChannel)" :key="member">{{ member }}</li>
               </ul>
+            </div> -->
+<!-- 
+            <div v-if="profileTab === 'participants'">
+              <ul>
+                <li 
+                  v-for="participant in getChatParticipants(selectedChannel)" 
+                  :key="participant"
+                  class="participant-item"
+                >
+                  <div class="participant-info">
+                    <div class="participant-picture">
+                      <profile-picture :src="getProfilePicture(participant)" size="40px" />
+                    </div>
+                    <div class="participant-details">
+                      <p>{{ participant }}</p>
+                    </div>
+                  </div>
+            
+                  <button 
+                    @click="startOrEnterChat(participant)" 
+                    class="text-button">
+                    Text
+                  </button>
+                </li>
+              </ul>
+            </div> -->
+
+            <!-- <div v-if="profileTab === 'participants'">
+              <ul>
+                <li 
+                  v-for="participant in getChatParticipants(selectedChannel)" 
+                  :key="participant"
+                  class="participant-item"
+                >
+                  <div class="participant-info">
+                    <div class="participant-picture">
+                      <profile-picture :src="getProfilePicture(participant)" size="40px" />
+                    </div>
+                    <div class="participant-details">
+                      <p>{{ participant }}</p>
+                    </div>
+                  </div>
+            
+                  <button 
+                    v-if="participant !== $graffitiSession.value.actor" 
+                    @click="startOrEnterChat(participant)" 
+                    class="text-button">
+                    Text
+                  </button>
+                </li>
+              </ul>
+            </div> -->
+
+            <div v-if="profileTab === 'participants'">
+              <ul>
+                <li 
+                  v-for="participant in getChatParticipants(selectedChannel)" 
+                  :key="participant"
+                  class="participant-item"
+                >
+                  <div class="participant-info">
+                    <div class="participant-picture">
+                      <profile-picture :src="getProfilePicture(participant)" size="40px" />
+                    </div>
+                    <div class="participant-details">
+                      <p>{{ participant }}</p>
+                    </div>
+                  </div>
+            
+                  <!-- ✅ Show button only if it's not your own Kerberos ID -->
+                  <button 
+                    v-if="participant !== $graffitiSession.value.actor" 
+                    @click="openDirectMessage(participant)" 
+                    class="text-button">
+                    Text
+                  </button>
+                </li>
+              </ul>
+            </div>
+            
+            
+            
+            
+
+
+            <div v-if="profileTab === 'preferences'" class="preferences-panel">
+              <div class="preference-group">
+                <h4>Time To Study</h4>
+                <button
+                  v-for="option in ['Morning', 'Afternoon', 'Evening']"
+                  :key="option"
+                  :class="{ selected: profileForm.preferences.study_time === option }"
+                  @click="profileForm.preferences.study_time = option"
+                >{{ option }}</button>
+              </div>
+            
+              <div class="preference-group">
+                <h4>Meeting Style</h4>
+                <button
+                  v-for="option in ['In-person', 'Virtual', 'Hybrid']"
+                  :key="option"
+                  :class="{ selected: profileForm.preferences.meeting_style === option }"
+                  @click="profileForm.preferences.meeting_style = option"
+                >{{ option }}</button>
+              </div>
+            
+              <div class="preference-group">
+                <h4>Meeting Location</h4>
+                <button
+                  v-for="option in ['Coffee shop', 'Library', 'Park']"
+                  :key="option"
+                  :class="{ selected: profileForm.preferences.location === option }"
+                  @click="profileForm.preferences.location = option"
+                >{{ option }}</button>
+              </div>
+            
+              <div class="preference-group">
+                <h4>Group Size</h4>
+                <button
+                  v-for="option in ['2 people', 'Small group', 'Larger team']"
+                  :key="option"
+                  :class="{ selected: profileForm.preferences.group_size === option }"
+                  @click="profileForm.preferences.group_size = option"
+                >{{ option }}</button>
+              </div>
+            
+              <div style="text-align: center; margin-top: 12px;">
+                <!-- <button class="save-button" @click="saveProfile">Save Preferences</button> -->
+                <!-- <button class="save-button" @click="savePreferencesForChat">Save Preferences</button> -->
+                <button class="save-preferences-button" @click="savePreferencesForChat">💾 Save Preferences</button>
+
+                <div v-if="notificationVisible" class="notification">
+                  {{ notificationMessage }}
+                </div>
+
+              </div>
             </div>
 
-            <div v-if="profileTab === 'preferences'">
-              <p>No preferences available yet.</p>
-            </div>      
+            
+            
 
-
-            <!-- WITHOUT FUNCTIONALITY -->
+            <!-- WITHOUT FUNCTIONALITY
             <div v-if="selectedChannel.startsWith('group:')" style="margin-top: 16px;">
               <button @click="leaveGroupChat(selectedChannel)">Leave Group</button>
-            </div>
+            </div> -->
 
             <!-- <button class="back-button" @click="exitProfile">← Back</button> -->
           
@@ -328,14 +496,24 @@
             <ul class="chat-messages">
               <li v-if="isInitialPolling" class="loading">Loading...</li>
             
-              <li
+              <!-- <li
                 v-for="object in objects.sort((a, b) => a.value.published - b.value.published)"
                 :key="object.url"
                 :class="{
                   'my-message': object.actor === $graffitiSession.value.actor,
                   'their-message': object.actor !== $graffitiSession.value.actor
                 }"
+              > -->
+              <li
+                v-for="object in objects.sort((a, b) => a.value.published - b.value.published)"
+                :key="object.url"
+                :data-message-id="object.url"
+                :class="{
+                  'my-message': object.actor === $graffitiSession.value.actor,
+                  'their-message': object.actor !== $graffitiSession.value.actor
+                }"
               >
+
                 <template v-if="editingMessage === object">
                   <div class="bubble">
                     <input v-model="editContent" />
@@ -389,6 +567,7 @@
           </ul>
           <button @click="showClassList = false">Close</button>
         </div>
+   
 
 
         <div v-if="showKerberosSelect" class="modal">

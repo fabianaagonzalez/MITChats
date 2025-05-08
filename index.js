@@ -2,6 +2,9 @@ import { createApp } from "vue";
 import { GraffitiLocal } from "@graffiti-garden/implementation-local";
 import { GraffitiPlugin } from "@graffiti-garden/wrapper-vue";
 import ProfilePicture from './profile-picture.js';
+import { GraffitiRemote } from "@graffiti-garden/implementation-remote";
+
+
 
 createApp({
   components: {
@@ -37,8 +40,20 @@ createApp({
         pronouns: "",
         profile_picture: "",
         description: "",
-        classes: ""
+        classes: "",
+        preferences: {
+          study_time: "",       
+          meeting_style: "",    
+          location: "",        
+          group_size: ""        
+        },
       },
+      joinedClassParticipants: {}, 
+      notificationMessage: "",
+      notificationVisible: false
+
+
+    
 
     };
   },
@@ -73,10 +88,24 @@ createApp({
   },
 
   methods: {
+
+    
     toggleFabMenu() {
       this.fabMenuOpen = !this.fabMenuOpen;
+    
+      // 🌟 Smooth spinning logic
+      const fabButton = document.querySelector(".fab-main");
+      if (fabButton) {
+        if (this.fabMenuOpen) {
+          fabButton.classList.remove("spin-back");
+          fabButton.classList.add("spinning");
+        } else {
+          fabButton.classList.remove("spinning");
+          fabButton.classList.add("spin-back");
+        }
+      }
     },
-
+    
     createIndividualChat() {
       this.fabMenuOpen = false;
       this.showKerberosSelect = true;
@@ -96,6 +125,7 @@ createApp({
       }, this.$graffitiSession.value);
       this.showClassList = false;
     },
+    
 
     async startIndividualChat(kerb) {
       const chatId = `dm:${[kerb, this.$graffitiSession.value.actor].sort().join(":")}`;
@@ -130,6 +160,9 @@ createApp({
     enterChat(channel) {
       this.selectedChannel = channel;
     },
+
+    
+    
 
     leaveChat() {
       this.selectedChannel = null;
@@ -166,9 +199,22 @@ createApp({
       this.editContent = "";
     },
 
+
     async deleteMessage(message) {
+      const messageElement = document.querySelector(`[data-message-id="${message.url}"]`);
+    
+      if (messageElement) {
+     
+        messageElement.classList.add("imploding");
+    
+     
+        await new Promise(resolve => setTimeout(resolve, 400)); 
+      }
+    
+   
       await this.$graffiti.delete(message, this.$graffitiSession.value);
     },
+    
 
     async renameGroup(groupChannel, newName) {
       if (!newName.trim()) return;
@@ -208,7 +254,21 @@ createApp({
       this.renamedGroups = objects;
     },
 
+
+
     updateJoinedClassChats(objects) {
+      const byClass = {}; 
+    
+      objects.forEach(obj => {
+        const classChannel = obj.value.target;
+        if (!byClass[classChannel]) byClass[classChannel] = [];
+        byClass[classChannel].push(obj.actor);
+      });
+    
+      
+      this.joinedClassParticipants = byClass;
+    
+   
       const myActor = this.$graffitiSession.value.actor;
       const myJoins = objects.filter(obj => obj.actor === myActor);
       const uniqueClasses = new Set();
@@ -218,6 +278,7 @@ createApp({
       });
       this.joinedClassChats = Array.from(uniqueClasses);
     },
+    
 
     updateIndividualChats(objects) {
       const me = this.$graffitiSession.value.actor;
@@ -232,46 +293,73 @@ createApp({
         });
     },
 
+
+
     viewProfile() {
       this.viewingProfile = true;
       this.profileTab = 'participants';
+      this.loadPreferencesForChat(this.selectedChannel);
     },
+    
 
     exitProfile() {
       this.viewingProfile = false;
     },
 
+    
     getChatParticipants(channel) {
+      if (!channel) {
+        
+        return [];
+      }
+    
       if (channel.startsWith("group:")) {
         const group = this.groupChatObjects.find(g => g.value.object.channel === channel);
         return group ? group.value.object.members : [];
       }
-      if (channel.startsWith("class:mit:")) return this.mitKerbs;
-      if (channel.startsWith("dm:")) return channel.replace("dm:", "").split(":");
+      if (channel.startsWith("class:mit:")) {
+        return this.joinedClassParticipants[channel] || [];
+      }
+      if (channel.startsWith("dm:")) {
+        return channel.replace("dm:", "").split(":");
+      }
       return [];
     },
+    
 
     startEditProfile() {
       this.editingProfile = true;
     },
 
+
+
     async handleLogin() {
-      const kerb = prompt("Enter your Kerberos ID (ex: ricardoj)");
-      if (!kerb) return;
+      let kerb = this.profileForm.name;
+      
+      if (!kerb) {
+        // If there's no Kerberos ID in the form, ask for it
+        kerb = prompt("Enter your Kerberos ID (ex: ricardoj)");
+        if (!kerb) return;
+        localStorage.setItem('kerberos', kerb);
+        this.profileForm.name = kerb;
+      }
+      
+      console.log("🔓 Logging in as:", kerb);
     
       await this.$graffiti.login({ actor: kerb });
-      localStorage.setItem('kerberos', kerb);
-    
-      console.log("✅ Logged in as", this.$graffitiSession.value.actor);
-    
-      this.editingProfile = false;
-    
-      // 🧼 RESET FIRST to avoid stale values
-      this.resetProfileForm();       
-    
-      // 🔄 THEN attempt to load saved profile
+      
+   
+      this.selectedChannel = null;
+      this.viewingProfile  = false;
+      this.editingProfile  = false;
+      this.activeTab       = 'all';
+      this.resetProfileForm();
+      
+  
       this.loadProfileFromLocalStorage();
     },
+    
+    
 
     
 
@@ -285,20 +373,22 @@ createApp({
         description: this.profileForm.description,
         classes: this.profileForm.classes.split(',').map(c => c.trim()),
         describes: this.$graffitiSession.value.actor,
-        published: Date.now()
+        preferences: this.profileForm.preferences,
+        published: Date.now(),
+        generator: "https://username.github.io/your-app/",
       };
     
-      // Save in Graffiti
+
       await this.$graffiti.put({
         value: profile,
-        channels: [this.$graffitiSession.value.actor]
+        channels: [this.$graffitiSession.value.actor,"designftw-2025-studio2"]
       }, this.$graffitiSession.value);
     
-      // ALSO save in localStorage for backup
+  
       localStorage.setItem(`profile-${this.$graffitiSession.value.actor}`, JSON.stringify(profile));
 
     
-      console.log("✅ Profile saved!");
+      console.log("Profile saved!");
       this.editingProfile = false;
     },
 
@@ -308,7 +398,7 @@ createApp({
     
       const reader = new FileReader();
       reader.onload = (e) => {
-        this.profileForm.profile_picture = e.target.result; // base64 string
+        this.profileForm.profile_picture = e.target.result; 
       };
       reader.readAsDataURL(file);
     },
@@ -324,11 +414,15 @@ createApp({
           pronouns: parsed.pronouns || "",
           profile_picture: parsed.profile_picture || "",
           description: parsed.description || "",
-          classes: parsed.classes ? parsed.classes.join(", ") : ""
+          classes: parsed.classes ? parsed.classes.join(", ") : "",
+          preferences: parsed.preferences || {
+            study_time: "", meeting_style: "", location: "", group_size: ""
+          }
+          
         };
-        console.log("✅ Profile loaded from localStorage immediately after login!");
+        console.log(" Profile loaded from localStorage immediately after login!");
       } else {
-        // 🛠 Reset to blank if no saved profile exists
+   
         this.resetProfileForm();
         console.log("ℹ️ No profile found in localStorage. Resetting to blank.");
       }
@@ -344,20 +438,32 @@ createApp({
         pronouns: latest.pronouns || "",
         profile_picture: latest.profile_picture || "",
         description: latest.description || "",
-        classes: latest.classes ? latest.classes.join(", ") : ""
+        classes: latest.classes ? latest.classes.join(", ") : "",
+        preferences: latest.preferences || {
+          study_time: "", meeting_style: "", location: "", group_size: ""
+        }        
+        
       };
     
-      console.log("✅ Profile auto-loaded from graffiti-discover!");
+      console.log("Profile auto-loaded from graffiti-discover!");
     },
+
     resetProfileForm() {
       this.profileForm = {
         name: "",
         pronouns: "",
         profile_picture: "",
         description: "",
-        classes: ""
+        classes: "",
+        preferences: {
+          study_time: "",
+          meeting_style: "",
+          location: "",
+          group_size: ""
+        }
       };
     },
+    
     getProfilePicture(chat) {
       const otherUser = chat.replace("dm:", "").replace(this.$graffitiSession.value.actor, "").replace(":", "");
       const local = localStorage.getItem(`profile-${otherUser}`);
@@ -385,24 +491,176 @@ createApp({
       const currentUser = this.$graffitiSession.value.actor;
       const parts = chat.replace("dm:", "").split(":");
 
-      // Show the user that is not me
+   
       const otherUser = parts.find(p => p !== currentUser);
-      console.log("👤 Other user resolved as:", otherUser); // Add this to verify
+      console.log("👤 Other user resolved as:", otherUser); 
       return otherUser || "Unknown";
     }, 
-      // In index.js
+     
       getChatProfilePicture(channel) {
         if (channel.startsWith("dm:")) {
-          return this.getProfilePicture(channel); // base64 or null
+          return this.getProfilePicture(channel); 
         }
-        // All others return null to trigger fallback
+      
         return null;
       },
       getChatFallback(channel) {
         if (channel.startsWith("group:")) return "👥";
         if (channel.startsWith("class:mit:")) return "🎓";
         return "👤";
+      },
+
+      
+
+      async savePreferencesForChat() {
+        if (!this.selectedChannel || !this.$graffitiSession.value) return;
+      
+        const preferenceObject = {
+          describes: this.selectedChannel,
+          preferences: this.profileForm.preferences,
+          published: Date.now()
+        };
+      
+        await this.$graffiti.put({
+          value: preferenceObject,
+          channels: [this.selectedChannel]
+        }, this.$graffitiSession.value);
+      
+        localStorage.setItem(`global-preferences-${this.$graffitiSession.value.actor}`, JSON.stringify(this.profileForm.preferences));
+      
+        console.log("Preferences saved for", this.selectedChannel);
+      
+     
+        const existingToast = document.querySelector('.toast-notification');
+        if (existingToast) {
+          document.body.removeChild(existingToast);
+        }
+      
+    
+        const toast = document.createElement('div');
+        toast.className = "toast-notification";
+        toast.innerText = "Preferences Saved!";
+        document.body.appendChild(toast);
+     
+        setTimeout(() => {
+          toast.classList.add('show');
+        }, 50);
+      
+   
+        setTimeout(() => {
+          toast.classList.remove('show');
+          setTimeout(() => {
+            if (document.body.contains(toast)) {
+              document.body.removeChild(toast);
+            }
+          }, 300);
+        }, 2000);
+      },
+      
+      loadPreferencesForChat(channel) {
+        const local = localStorage.getItem(`prefs-${channel}-${this.$graffitiSession.value.actor}`);
+        if (local) {
+          try {
+            const parsed = JSON.parse(local);
+            this.profileForm.preferences = parsed.preferences;
+          } catch (e) {
+            console.warn("⚠️ Couldn't parse chat preferences:", local);
+          }
+        } else {
+          this.profileForm.preferences = {
+            study_time: "",
+            meeting_style: "",
+            location: "",
+            group_size: ""
+          };
+        }
+      },
+      get filteredParticipants() {
+        if (!this.participantSearch) return this.getChatParticipants(this.selectedChannel);
+        return this.getChatParticipants(this.selectedChannel).filter(participant =>
+          participant.toLowerCase().includes(this.participantSearch.toLowerCase())
+        );
+      },
+
+  
+      
+
+
+      async startOrEnterChat(participant) {
+        const chatId = `dm:${[participant, this.$graffitiSession.value.actor].sort().join(":")}`;
+      
+        if (!this.individualChats.includes(chatId)) {
+          // If the chat doesn't exist, create it
+          this.individualChats.push(chatId);
+      
+          await this.$graffiti.put({
+            value: {
+              activity: "Create",
+              object: { 
+                type: "DM", 
+                between: [participant, this.$graffitiSession.value.actor], 
+                channel: chatId 
+              }
+            },
+            channels: ["mitchats"]
+          }, this.$graffitiSession.value);
+      
+          console.log(`Created new DM with ${participant}`);
+        } else {
+          console.log(`Entering existing DM with ${participant}`);
+        }
+    
+        this.enterChat(chatId);
+      },
+
+      async openDirectMessage(participant) {
+      
+        const chatId = `dm:${[participant, this.$graffitiSession.value.actor].sort().join(":")}`;
+      
+       
+        if (!this.individualChats.includes(chatId)) {
+          this.individualChats.push(chatId);
+          await this.$graffiti.put({
+            value: {
+              activity: "Create",
+              object: { type: "DM", between: [participant, this.$graffitiSession.value.actor], channel: chatId }
+            },
+            channels: ["mitchats"]
+          }, this.$graffitiSession.value);
+        }
+      
+      
+        this.selectedChannel = chatId;
+      
+      
+        this.viewingProfile = false;
+      },
+
+
+      async logout() {
+        await this.$graffiti.logout(this.$graffitiSession.value);
+        this.selectedChannel = null;
+        this.viewingProfile = false;
+        this.editingProfile = false;
+        this.activeTab = 'all';
+        this.resetProfileForm();
+
+        const welcomeBox = document.querySelector(".welcome-box");
+        if (welcomeBox) {
+          welcomeBox.style.animation = "none"; 
+          setTimeout(() => {
+            welcomeBox.style.animation = ""; 
+          }, 10);
+        }
       }
+
+      
+      
+      
+      
+
+      
+      
       
 
     
@@ -414,25 +672,26 @@ createApp({
   
     
   },
+
+
   mounted() {
     const kerb = localStorage.getItem('kerberos');
     if (kerb) {
-      console.log("✅ Found saved kerberos:", kerb);
-      this.$graffiti.login({ actor: kerb }).then(() => {
-        this.editingProfile = false;
-  
-        // 🔄 Reset to prevent leftover profile
-        this.resetProfileForm();
-  
-        this.loadProfileFromLocalStorage();
-      });
+      console.log("Found saved kerberos:", kerb);
+    
+      this.profileForm.name = kerb;
     }
-  },
+  }
+  
 
   
   
 })
-.use(GraffitiPlugin, { graffiti: new GraffitiLocal() })
+.use(GraffitiPlugin, { 
+    // graffiti: new GraffitiLocal() 
+    graffiti: new GraffitiRemote(),
+
+})
 .mount("#app");
 
 
