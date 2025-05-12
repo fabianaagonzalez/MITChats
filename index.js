@@ -127,9 +127,23 @@ createApp({
     },
     
 
+    // async startIndividualChat(kerb) {
+    //   const chatId = `dm:${[kerb, this.$graffitiSession.value.actor].sort().join(":")}`;
+    //   this.individualChats.push(chatId);
+    //   await this.$graffiti.put({
+    //     value: {
+    //       activity: "Create",
+    //       object: { type: "DM", between: [kerb, this.$graffitiSession.value.actor], channel: chatId }
+    //     },
+    //     channels: ["mitchats"]
+    //   }, this.$graffitiSession.value);
+    //   this.showKerberosSelect = false;
+    // },
+
     async startIndividualChat(kerb) {
       const chatId = `dm:${[kerb, this.$graffitiSession.value.actor].sort().join(":")}`;
       this.individualChats.push(chatId);
+    
       await this.$graffiti.put({
         value: {
           activity: "Create",
@@ -137,8 +151,11 @@ createApp({
         },
         channels: ["mitchats"]
       }, this.$graffitiSession.value);
+    
       this.showKerberosSelect = false;
     },
+    
+    
 
     async submitGroupChat() {
       if (!this.groupNameInput || this.selectedKerbs.length === 0) return;
@@ -512,17 +529,34 @@ createApp({
     }
     
     ,
-    getOtherUser(chat) {
-      if (!chat || !this.$graffitiSession.value?.actor) return "Unknown";
+    // getOtherUser(chat) {
+    //   if (!chat || !this.$graffitiSession.value?.actor) return "Unknown";
 
-      const currentUser = this.$graffitiSession.value.actor;
-      const parts = chat.replace("dm:", "").split(":");
+    //   const currentUser = this.$graffitiSession.value.actor;
+    //   const parts = chat.replace("dm:", "").split(":");
 
    
+    //   const otherUser = parts.find(p => p !== currentUser);
+    //   console.log("👤 Other user resolved as:", otherUser); 
+    //   return otherUser || "Unknown";
+    // }, 
+
+    getOtherUser(chat) {
+      if (!chat || !this.$graffitiSession.value?.actor) return "Unknown";
+    
+      const currentUser = this.$graffitiSession.value.actor;
+      const parts = chat.replace("dm:", "").split(":");
+    
       const otherUser = parts.find(p => p !== currentUser);
-      console.log("👤 Other user resolved as:", otherUser); 
+    
+      if (otherUser.startsWith("https")) {
+        const username = otherUser.split("/").pop();
+        return username || "Unknown";
+      }
       return otherUser || "Unknown";
-    }, 
+    },
+    
+    
      
       getChatProfilePicture(channel) {
         if (channel.startsWith("dm:")) {
@@ -699,6 +733,14 @@ createApp({
     
         // Update the local list
         this.chatMessages = updatedObjects.sort((a, b) => a.value.published - b.value.published);
+      }, 
+
+
+      extractUsername(webId) {
+        if (!webId) return "Unknown";
+        // This regex matches the last segment after the last '/' in the URL
+        const match = webId.match(/([^\/]+)$/);
+        return match ? match[0] : webId;
       }
 
 

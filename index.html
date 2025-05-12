@@ -139,7 +139,7 @@
               <!-- Name + button side by side -->
               <div style="display: flex; align-items: center; gap: 12px; flex-grow: 1;">
                 <div style="font-size: 14px; color: #333;">
-                  {{ getChatDisplayName(chat.channel) }}
+                  {{ extractUsername(getChatDisplayName(chat.channel)) }}
                 </div>
                 <button @click="enterChat(chat.channel)">Enter</button>
                 <!-- Apply the class to your buttons -->
@@ -299,7 +299,7 @@
               <button class="back-button" @click="exitProfile">← Back</button>
             </div>
             
-            <h2>{{ getChatDisplayName(selectedChannel) }}</h2>
+            <h2>{{ extractUsername(getChatDisplayName(selectedChannel)) }}</h2>
 
             <div class="profile-tabs">
               <button :class="{ active: profileTab === 'participants' }" @click="profileTab = 'participants'">Participants</button>
@@ -376,7 +376,7 @@
                       <profile-picture :src="getProfilePicture(participant)" size="40px" />
                     </div>
                     <div class="participant-details">
-                      <p>{{ participant }}</p>
+                      <p>{{ extractUsername(participant) }}</p>
                     </div>
                   </div>
             
@@ -466,12 +466,18 @@
 
         <!-- IF IN A CHAT -->
         <template v-else>
-          <div class="chat-view">
+          <div v-if="!selectedChannel" class="empty-state">
+            <p>Select a chat or create a new one to start messaging.</p>
+          </div>
+          
+          <div v-if="selectedChannel" class="chat-view">
             <div v-if="selectedChannel && !viewingProfile">
               <button class="back-button" @click="leaveChat">← Back</button>
             </div>
 
-            <h2 @click="viewProfile" style="cursor: pointer;">{{ getChatDisplayName(selectedChannel) }}</h2>
+            <h2 v-if="selectedChannel" @click="viewProfile" style="cursor: pointer;">{{ extractUsername(getChatDisplayName(selectedChannel)) }}</h2>
+
+            <!-- <h2 @click="viewProfile" style="cursor: pointer;">{{ extractUsername(getChatDisplayName(selectedChannel)) }}</h2> -->
 
             <div v-if="selectedChannel && selectedChannel.startsWith('group:')">
               <input type="text" v-model="renameInputs[selectedChannel]" placeholder="New group name" />
@@ -519,7 +525,7 @@
                 <template v-else>
                   <div class="message-group">
                     <div class="meta">
-                      <span class="sender">{{ object.actor }} </span>
+                      <span class="sender">{{ extractUsername(object.actor) }} </span>
                       <span class="timestamp">{{ new Date(object.value.published).toLocaleTimeString() }}</span>
                     </div>
           

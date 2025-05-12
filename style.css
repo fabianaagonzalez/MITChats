@@ -1082,5 +1082,15 @@ body {
     pointer-events: none;
   }
   
+  .chat-view:empty {
+    display: none;
+  }
+
+  .empty-state {
+    text-align: center;
+    color: #888;
+    padding: 20px;
+    font-size: 0.9em;
+  }
   
   
