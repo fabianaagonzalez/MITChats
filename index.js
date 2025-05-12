@@ -57,8 +57,6 @@ createApp({
       newLinkUrl: '',
       links: [],
 
-      profilePictures: {},
-
 
 
     
@@ -101,7 +99,7 @@ createApp({
     toggleFabMenu() {
       this.fabMenuOpen = !this.fabMenuOpen;
     
-      // 🌟 Smooth spinning logic
+   
       const fabButton = document.querySelector(".fab-main");
       if (fabButton) {
         if (this.fabMenuOpen) {
@@ -134,19 +132,6 @@ createApp({
       this.showClassList = false;
     },
     
-
-    // async startIndividualChat(kerb) {
-    //   const chatId = `dm:${[kerb, this.$graffitiSession.value.actor].sort().join(":")}`;
-    //   this.individualChats.push(chatId);
-    //   await this.$graffiti.put({
-    //     value: {
-    //       activity: "Create",
-    //       object: { type: "DM", between: [kerb, this.$graffitiSession.value.actor], channel: chatId }
-    //     },
-    //     channels: ["mitchats"]
-    //   }, this.$graffitiSession.value);
-    //   this.showKerberosSelect = false;
-    // },
 
     async startIndividualChat(kerb) {
       const chatId = `dm:${[kerb, this.$graffitiSession.value.actor].sort().join(":")}`;
@@ -281,29 +266,6 @@ createApp({
 
 
 
-    // updateJoinedClassChats(objects) {
-    //   const byClass = {}; 
-    
-    //   objects.forEach(obj => {
-    //     const classChannel = obj.value.target;
-    //     if (!byClass[classChannel]) byClass[classChannel] = [];
-    //     byClass[classChannel].push(obj.actor);
-    //   });
-    
-      
-    //   this.joinedClassParticipants = byClass;
-    
-   
-    //   const myActor = this.$graffitiSession.value.actor;
-    //   const myJoins = objects.filter(obj => obj.actor === myActor);
-    //   const uniqueClasses = new Set();
-    //   myJoins.forEach(obj => {
-    //     const className = obj.value.target.replace("class:mit:", "");
-    //     uniqueClasses.add(className);
-    //   });
-    //   this.joinedClassChats = Array.from(uniqueClasses);
-    // },
-
     updateJoinedClassChats(objects) {
       const byClass = {}; 
     
@@ -315,9 +277,9 @@ createApp({
         }
       });
     
-      this.joinedClassParticipants = { ...byClass }; // This triggers Vue reactivity
+      this.joinedClassParticipants = { ...byClass }; 
     
-      // Update the local list as well
+     
       const myActor = this.$graffitiSession.value.actor;
       const myJoins = objects.filter(obj => obj.actor === myActor);
       const uniqueClasses = new Set();
@@ -326,7 +288,7 @@ createApp({
         uniqueClasses.add(className);
       });
     
-      // 🔄 Update the list to trigger reactivity
+      
       this.joinedClassChats = Array.from(uniqueClasses);
     },
     
@@ -359,24 +321,6 @@ createApp({
     },
 
     
-    // getChatParticipants(channel) {
-    //   if (!channel) {
-        
-    //     return [];
-    //   }
-    
-    //   if (channel.startsWith("group:")) {
-    //     const group = this.groupChatObjects.find(g => g.value.object.channel === channel);
-    //     return group ? group.value.object.members : [];
-    //   }
-    //   if (channel.startsWith("class:mit:")) {
-    //     return this.joinedClassParticipants[channel] || [];
-    //   }
-    //   if (channel.startsWith("dm:")) {
-    //     return channel.replace("dm:", "").split(":");
-    //   }
-    //   return [];
-    // },
 
     getChatParticipants(channel) {
       if (!channel) {
@@ -391,7 +335,7 @@ createApp({
         return this.joinedClassParticipants[channel] || [];
       }
       if (channel.startsWith("dm:")) {
-        // Get the participants and remove "https" and "id.inrupt.com"
+        
         const parts = channel.replace("dm:", "").split(":");
         return parts.map(part => {
           if (part.startsWith("https")) {
@@ -415,7 +359,7 @@ createApp({
       let kerb = this.profileForm.name;
       
       if (!kerb) {
-        // If there's no Kerberos ID in the form, ask for it
+      
         kerb = prompt("Enter your Kerberos ID (ex: ricardoj)");
         if (!kerb) return;
         localStorage.setItem('kerberos', kerb);
@@ -502,7 +446,7 @@ createApp({
       } else {
    
         this.resetProfileForm();
-        console.log("ℹ️ No profile found in localStorage. Resetting to blank.");
+        console.log(" No profile found in localStorage. Resetting to blank.");
       }
     },
 
@@ -542,119 +486,28 @@ createApp({
       };
     },
     
-    // getProfilePicture(chat) {
-    //   const otherUser = chat.replace("dm:", "").replace(this.$graffitiSession.value.actor, "").replace(":", "");
-    //   const local = localStorage.getItem(`profile-${otherUser}`);
+    getProfilePicture(chat) {
+      const otherUser = chat.replace("dm:", "").replace(this.$graffitiSession.value.actor, "").replace(":", "");
+      const local = localStorage.getItem(`profile-${otherUser}`);
     
-    //   if (local) {
-    //     try {
-    //       const parsed = JSON.parse(local);
-    //       const pic = parsed.profile_picture;
-    //       if (pic) {
+      if (local) {
+        try {
+          const parsed = JSON.parse(local);
+          const pic = parsed.profile_picture;
+          if (pic) {
          
-    //         return pic.startsWith("data:image") ? pic : `data:image/jpeg;base64,${pic}`;
-    //       }
-    //     } catch (e) {
-    //       console.warn("⚠️ Couldn't parse profile:", local);
-    //     }
-    //   }
-    
-    //   return null;
-    // }
-
-    async getProfilePicture(webId) {
-      if (!webId) return null;
-    
-      // 🌟 Normalize the WebID
-      if (!webId.startsWith("http")) {
-        webId = `https://id.inrupt.com/${webId}`;
-      }
-    
-      console.log(`🔍 Looking for profile picture for: ${webId}`);
-    
-      try {
-        const objects = await this.$graffiti.discover({
-          channels: [webId],
-          schema: {
-            properties: {
-              value: {
-                required: ['profile_picture'],
-                properties: {
-                  profile_picture: { type: 'string' }
-                }
-              }
-            }
+            return pic.startsWith("data:image") ? pic : `data:image/jpeg;base64,${pic}`;
           }
-        });
-    
-        if (objects.length > 0 && objects[0].value.profile_picture) {
-          let profilePic = objects[0].value.profile_picture;
-    
-          console.log(`🌐 Found profile picture URL: ${profilePic}`);
-    
-          // ✅ Check if it's HTTPS
-          if (profilePic.startsWith("http://")) {
-            const httpsUrl = profilePic.replace("http://", "https://");
-            profilePic = httpsUrl;
-          }
-    
-          // 🖼️ Cache and Return
-          this.profilePictures[webId] = profilePic;
-          return profilePic;
-        } else {
-          console.warn(`⚠️ No profile picture found for ${webId}`);
-          return null;
+        } catch (e) {
+          console.warn("⚠️ Couldn't parse profile:", local);
         }
-      } catch (error) {
-        console.error(`🚫 Error fetching profile picture for ${webId}:`, error);
-        return null;
-      }
-    },
-    normalizeWebId(webId) {
-      if (!webId) {
-        console.warn("⚠️ Attempted to normalize an undefined WebID");
-        return null;
       }
     
-      if (!webId.startsWith("http")) {
-        return `https://id.inrupt.com/${webId}`;
-      }
-      return webId;
+      return null;
     }
     
-    
-    
-    
-    
-    
-    
     ,
-    // getOtherUser(chat) {
-    //   if (!chat || !this.$graffitiSession.value?.actor) return "Unknown";
-
-    //   const currentUser = this.$graffitiSession.value.actor;
-    //   const parts = chat.replace("dm:", "").split(":");
-
    
-    //   const otherUser = parts.find(p => p !== currentUser);
-    //   console.log("👤 Other user resolved as:", otherUser); 
-    //   return otherUser || "Unknown";
-    // }, 
-
-    // getOtherUser(chat) {
-    //   if (!chat || !this.$graffitiSession.value?.actor) return "Unknown";
-    
-    //   const currentUser = this.$graffitiSession.value.actor;
-    //   const parts = chat.replace("dm:", "").split(":");
-    
-    //   const otherUser = parts.find(p => p !== currentUser);
-    
-    //   if (otherUser.startsWith("https")) {
-    //     const username = otherUser.split("/").pop();
-    //     return username || "Unknown";
-    //   }
-    //   return otherUser || "Unknown";
-    // },
 
     getOtherUser(chat) {
       if (!chat || !this.$graffitiSession.value?.actor) return "Unknown";
@@ -663,13 +516,13 @@ createApp({
       console.log("💡 Chat: ", chat);
       console.log("💡 Current User: ", currentUser);
     
-      // Extract all URLs from the string using regex
+    
       const urls = chat.match(/https?:\/\/[^\s:]+/g);
       console.log("💡 Extracted URLs: ", urls);
     
       if (!urls || urls.length === 0) return "Unknown";
     
-      // Find the one that is NOT the current user
+     
       const otherUser = urls.find(url => url !== currentUser);
       console.log("💡 Other User Found: ", otherUser);
     
@@ -685,10 +538,6 @@ createApp({
         return "Unknown";
       }
     },
-    
-    
-    
-    
      
       getChatProfilePicture(channel) {
         if (channel.startsWith("dm:")) {
@@ -783,7 +632,6 @@ createApp({
         const chatId = `dm:${[participant, this.$graffitiSession.value.actor].sort().join(":")}`;
       
         if (!this.individualChats.includes(chatId)) {
-          // If the chat doesn't exist, create it
           this.individualChats.push(chatId);
       
           await this.$graffiti.put({
@@ -863,20 +711,20 @@ createApp({
           }
         });
     
-        // Update the local list
+      
         this.chatMessages = updatedObjects.sort((a, b) => a.value.published - b.value.published);
       }, 
 
 
       extractUsername(webId) {
         if (!webId) return "Unknown";
-        // This regex matches the last segment after the last '/' in the URL
+   
         const match = webId.match(/([^\/]+)$/);
         return match ? match[0] : webId;
       },
 
       updateKerberosList(objects) {
-        const newUsers = new Set(); // To avoid duplicates
+        const newUsers = new Set(); 
         objects.forEach(obj => {
           const actor = obj.actor;
           if (actor) {
@@ -884,9 +732,9 @@ createApp({
           }
         });
     
-        // Convert to array and assign it
+       
         this.kerberosList = Array.from(newUsers);
-        this.mitKerbs = Array.from(newUsers); // If you want to use the same list for mitKerbs
+        this.mitKerbs = Array.from(newUsers); 
       },
 
 
@@ -908,21 +756,12 @@ createApp({
         this.newLinkUrl = "";
       },
       
-      
-      // updateLinks(objects) {
-      //   this.links = objects
-      //     .filter(obj => obj.value.title && obj.value.url)
-      //     .map(obj => ({
-      //       title: obj.value.title,
-      //       url: obj.value.url
-      //     }));
-      // },
 
       async updateLinks(objects) {
         this.links = objects.map(obj => ({
           title: obj.value.title,
           url: obj.value.url,
-          sender: obj.actor,      // 🛠️ Include the sender from graffiti
+          sender: obj.actor,      
           graffitiObject: obj
         }));
       },
@@ -933,20 +772,20 @@ createApp({
         const linkElement = document.querySelector(`[data-link-id="${link.url}"]`);
       
         if (linkElement) {
-          // 🌟 Apply a little animation (like the delete messages)
+         
           linkElement.classList.add("imploding");
       
-          // 🌟 Wait for the animation to complete
+          
           await new Promise(resolve => setTimeout(resolve, 400));
         }
       
-        // 🌟 Perform the deletion from graffiti
+      
         await this.$graffiti.delete(link.graffitiObject, this.$graffitiSession.value);
       
-        // 🌟 Remove from local state
+       
         this.links = this.links.filter(l => l.url !== link.url);
       
-        console.log(`✅ Deleted link: ${link.url}`);
+        console.log(` Deleted link: ${link.url}`);
       }
       
       
@@ -983,7 +822,7 @@ createApp({
       if (this.selectedChannel) {
         this.fetchNewMessages();
       }
-    }, 2000); // Poll every 2 seconds
+    }, 2000); 
   },
 
   beforeUnmount() {
