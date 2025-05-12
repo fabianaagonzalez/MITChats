@@ -59,6 +59,10 @@ createApp({
   },
 
   computed: {
+    allLoggedSolidUsers() {
+      const users = JSON.parse(localStorage.getItem('loggedSolidUsers')) || [];
+      return [...new Set(users)];
+    },
     allChats() {
       const all = [];
 
@@ -89,7 +93,11 @@ createApp({
 
   methods: {
 
-    
+    extractUsername(webId) {
+      if (!webId) return "Unknown";
+      const parts = webId.split("/");
+      return parts[parts.length - 1];  // Grabs the last part of the URL
+    },
     toggleFabMenu() {
       this.fabMenuOpen = !this.fabMenuOpen;
     
@@ -377,31 +385,61 @@ createApp({
 
 
 
-    async handleLogin() {
-      let kerb = this.profileForm.name;
+    // async handleLogin() {
+    //   let kerb = this.profileForm.name;
       
-      if (!kerb) {
-        // If there's no Kerberos ID in the form, ask for it
-        kerb = prompt("Enter your Kerberos ID (ex: ricardoj)");
-        if (!kerb) return;
-        localStorage.setItem('kerberos', kerb);
-        this.profileForm.name = kerb;
-      }
+    //   if (!kerb) {
+    //     // If there's no Kerberos ID in the form, ask for it
+    //     kerb = prompt("Enter your Kerberos ID (ex: ricardoj)");
+    //     if (!kerb) return;
+    //     localStorage.setItem('kerberos', kerb);
+    //     this.profileForm.name = kerb;
+    //   }
       
-      console.log("🔓 Logging in as:", kerb);
+    //   console.log("🔓 Logging in as:", kerb);
     
-      await this.$graffiti.login({ actor: kerb });
+    //   await this.$graffiti.login({ actor: kerb });
       
    
-      this.selectedChannel = null;
-      this.viewingProfile  = false;
-      this.editingProfile  = false;
-      this.activeTab       = 'all';
-      this.resetProfileForm();
+    //   this.selectedChannel = null;
+    //   this.viewingProfile  = false;
+    //   this.editingProfile  = false;
+    //   this.activeTab       = 'all';
+    //   this.resetProfileForm();
       
   
+    //   this.loadProfileFromLocalStorage();
+    // },
+
+    async handleLogin() {
+      let solidWebId = this.profileForm.name;
+    
+      if (!solidWebId) {
+        solidWebId = prompt("Enter your Solid WebID (ex: https://solidweb.me/username)");
+        if (!solidWebId) return;
+        this.profileForm.name = solidWebId;
+      }
+    
+      console.log("🔓 Logging in as:", solidWebId);
+    
+      await this.$graffiti.login({ actor: solidWebId });
+    
+      // 🌟 Save it to localStorage if it's not already there
+      const loggedUsers = JSON.parse(localStorage.getItem('loggedSolidUsers')) || [];
+      if (!loggedUsers.includes(solidWebId)) {
+        loggedUsers.push(solidWebId);
+        localStorage.setItem('loggedSolidUsers', JSON.stringify(loggedUsers));
+      }
+    
+      this.selectedChannel = null;
+      this.viewingProfile = false;
+      this.editingProfile = false;
+      this.activeTab = 'all';
+      this.resetProfileForm();
+    
       this.loadProfileFromLocalStorage();
     },
+    
     
     
 

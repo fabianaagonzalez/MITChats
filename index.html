@@ -571,7 +571,7 @@
    
 
 
-        <div v-if="showKerberosSelect" class="modal">
+        <!-- <div v-if="showKerberosSelect" class="modal">
           <h3>Select a person to chat with:</h3>
           <ul>
             <li v-for="kerb in kerberosList" :key="kerb">
@@ -580,9 +580,37 @@
             </li>
           </ul>
           <button @click="showKerberosSelect = false">Close</button>
-        </div>
+        </div> -->
 
-        <div v-if="showGroupForm" class="modal">
+
+        <!-- Create Group Chat Modal -->
+<div v-if="showGroupForm" class="modal">
+  <h3>Create Group Chat</h3>
+  <input v-model="groupNameInput" placeholder="Group Name" />
+  <h4>Select Members</h4>
+  <div v-for="solidUser in allLoggedSolidUsers" :key="solidUser">
+    <label>
+      <input type="checkbox" :value="solidUser" v-model="selectedKerbs" /> 
+      {{ extractUsername(solidUser) }}
+    </label>
+  </div>
+  <button @click="submitGroupChat">Create Group</button>
+  <button @click="showGroupForm = false">Cancel</button>
+</div>
+
+<!-- Start Individual Chat Modal -->
+<div v-if="showKerberosSelect" class="modal">
+  <h3>Select a person to chat with:</h3>
+  <ul>
+    <li v-for="solidUser in allLoggedSolidUsers" :key="solidUser">
+      {{ extractUsername(solidUser) }}
+      <button @click="startIndividualChat(solidUser)">Start Chat</button>
+    </li>
+  </ul>
+  <button @click="showKerberosSelect = false">Close</button>
+</div>
+
+        <!-- <div v-if="showGroupForm" class="modal">
           <h3>Create Group Chat</h3>
           <input v-model="groupNameInput" placeholder="Group Name" />
           <h4>Select Members</h4>
@@ -591,7 +619,7 @@
           </div>
           <button @click="submitGroupChat">Create Group</button>
           <button @click="showGroupForm = false">Cancel</button>
-        </div>
+        </div> -->
 
         <!-- Profile  -->
         <!-- <div class="profile-circle" @click="startEditProfile">
