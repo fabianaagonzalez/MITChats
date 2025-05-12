@@ -271,26 +271,74 @@ body {
     color: white;
   }
 
-  .chat-messages {
+  /* .chat-messages {
     display: flex;
     flex-direction: column;
     gap: 8px;
     padding-bottom: 16px;
+  } */
+  .chat-messages {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background-color: white; /* White background for the entire chat space */
+    border-radius: 8px;
+    padding: 10px;
+    overflow-y: auto;
+    max-height: 500px;
+    scrollbar-width: thin;
+    padding-right: 10px;
   }
+  .message-group {
+    display: flex;
+    justify-content: flex-end;
+    position: relative;
+    margin-bottom: 8px;
+  }
+
+  .message-group .meta {
+    font-size: 0.75em;
+    color: #888;
+    margin-bottom: 2px;
+    display: block;
+    text-align: right;
+  }
+  
+  /* ========== BUBBLE STYLING ========== */
+  .message-group .bubble {
+    background: #f3efe7;
+    padding: 8px 12px;
+    border-radius: 10px;
+    max-width: 60%;
+    word-wrap: break-word;
+    margin-bottom: 4px;
+    position: relative;
+  }
+  
   
   .chat-messages li {
     display: flex;
   }
-  
-  .my-message {
-    justify-content: flex-end;
+
+  .chat-messages::-webkit-scrollbar {
+    width: 6px;
   }
+  
+  .chat-messages::-webkit-scrollbar-thumb {
+    background-color: #a31f34;
+    border-radius: 10px;
+  }
+  
+  .chat-messages::-webkit-scrollbar-thumb:hover {
+    background-color: #8c1b2c;
+  }
+  
   
   .their-message {
-    justify-content: flex-start;
+    align-items: flex-start;
   }
   
-  .bubble {
+  /* .bubble {
     background: #e4e4e4;
     color: #000;
     padding: 10px 14px;
@@ -298,32 +346,105 @@ body {
     max-width: 70%;
     position: relative;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  } */
+
+  .bubble {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #CCAB8D;
+    padding: 8px 14px;
+    border-radius: 12px;
+    max-width: 55%;
+    word-wrap: break-word;
+    position: relative;
+    margin-left: auto;
+    overflow-wrap: break-word;
+    gap: 10px; /* Space between text and buttons */
+  }
+/*   
+  .my-message .bubble {
+    background:#f3efe7;
+    border-bottom-right-radius: 4px;
+  } */
+
+  .my-message {
+    justify-content: flex-end;
   }
   
   .my-message .bubble {
-    /* background:#cbbca3; */
-    background:#f3efe7;
-    /* background:#fbecd6; */
-    /* color: white; */
-    border-bottom-right-radius: 4px;
+    background: #CCAB8D;
+    color: white;
+    margin-left: auto;
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 2px;
   }
+
+  .my-message .bubble::after {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 8px 0 8px 12px;
+    border-color: transparent transparent transparent #CCAB8D;
+    right: -10px;
+    top: 10px;
+  }
+  /* .their-message .bubble {
+    border-bottom-left-radius: 4px;
+  } */
   
   .their-message .bubble {
-    /* background: white; */
-    border-bottom-left-radius: 4px;
+    background: #e4e4e4;
+    color: #333;
+    margin-right: auto;
+  }
+
+  .bubble:hover {
+    transform: scale(1.02);
+  }
+
+  .bubble::after {
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-style: solid;
+  }
+  .my-message .bubble::after {
+    border-width: 8px 0 8px 12px;
+    border-color: transparent transparent transparent #CCAB8D;
+    right: -10px;
+    top: 10px;
   }
   
-  .meta {
+  .their-message .bubble::after {
+    border-width: 8px 12px 8px 0;
+    border-color: transparent #e4e4e4 transparent transparent;
+    left: -10px;
+    top: 10px;
+  }
+
+  /* .meta {
     display: flex;
     justify-content: space-between;
     font-size: 0.75em;
     opacity: 0.7;
     margin-bottom: 4px;
-    gap: 8px; /* 👈 Add this */
+    gap: 8px; 
+  } */
+  .meta {
+    display: flex;
+    justify-content: flex-end;
+    margin-right: 10px;
+    margin-bottom: 2px;
+    color: #888;
+    font-size: 0.8em;
   }
   
-  
   .sender {
+    margin-right: 5px;
     font-weight: bold;
   }
   
@@ -331,28 +452,70 @@ body {
     font-style: italic;
   }
   
-  .actions {
-    display: flex;
-    gap: 4px;
-    margin-top: 4px;
+  .bubble:hover .actions {
+    opacity: 1;
   }
   
-  .actions button {
-    font-size: 0.8em;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 2px 6px;
-    color: inherit;
+  .bubble .content {
+    flex-grow: 1;
+    margin-right: 8px;
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
   }
-  
-  .actions button:hover {
-    text-decoration: underline;
-  }
+/* ========== ACTION BUTTONS NEXT TO MESSAGE ========== */
+/* ========== ACTION BUTTONS NEXT TO MESSAGE ========== */
+
+.actions-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+}
+
+.action-btn {
+  font-size: 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: white;
+  transition: color 0.3s ease;
+}
+
+.action-btn:hover {
+  color: #a31f34;
+}
+
+.bubble:hover .actions {
+  opacity: 1; /* Only show on hover */
+}
+
+.actions button {
+  font-size: 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #888;
+  transition: color 0.2s ease;
+  padding:0;
+}
+
+.actions button:hover {
+  color: #a31f34;
+}
+
+
+
+
   
   .loading {
     text-align: center;
     opacity: 0.6;
+    font-size: 0.9em;
+    color: #888;
   }
 
   /* .back-button {
@@ -834,34 +997,58 @@ body {
   transform: scale(1.05);
 }
 
-/* Update your existing CSS for .modal */
-.modal {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-  z-index: 1000;
-  max-height: 80vh; /* Limit the height */
-  /* overflow-y: auto; Allow scrolling if content is too big */
-  opacity: 0;
-  animation: fadeIn 0.3s forwards;
-}
-
 /* Smooth fade-in animation */
-@keyframes fadeIn {
+/* @keyframes fadeIn {
   to {
     opacity: 1;
   }
+} */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.modal ul {
-  max-height: 60vh; /* Limit the height of the list */
-  overflow-y: auto; /* Scrollbar if it's too long */
+.bubble {
+  animation: fadeIn 0.3s ease forwards;
 }
+
+
+/* Modal Scrollable List */
+.modal ul {
+  max-height: 300px; /* Set a maximum height */
+  overflow-y: auto; /* Enable vertical scroll */
+  margin-top: 10px;
+  padding-right: 5px;
+}
+
+/* Custom scrollbar styling */
+.modal ul::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal ul::-webkit-scrollbar-thumb {
+  background-color: #a31f34; /* MIT red */
+  border-radius: 4px;
+}
+
+.modal ul::-webkit-scrollbar-thumb:hover {
+  background-color: #8c1b2c;
+}
+
+/* For the list of checkboxes in the group chat modal */
+.modal div {
+  max-height: 300px; /* Set a maximum height */
+  overflow-y: auto; /* Enable vertical scroll */
+  padding-right: 5px;
+}
+
 
 /* Implode animation */
 @keyframes implode {
@@ -883,11 +1070,6 @@ body {
   animation: implode 0.4s forwards;
 }
 
-
-
-
-
-
   
   @media (max-width: 600px) {
     .tab-buttons {
@@ -899,6 +1081,24 @@ body {
     }
   }
   
+  form {
+    transition: opacity 0.3s ease;
+  }
   
+  form[hidden] {
+    opacity: 0;
+    pointer-events: none;
+  }
+  
+  .chat-view:empty {
+    display: none;
+  }
+
+  .empty-state {
+    text-align: center;
+    color: #888;
+    padding: 20px;
+    font-size: 0.9em;
+  }
   
   

@@ -17,13 +17,13 @@ createApp({
       showClassList: false,
       mitClasses: ["6.100L", "6.4500", "2.678", "18.06", "21L.003"],
       joinedClassChats: [],
-      kerberosList: ["alice", "bob", "carla", "daniel"],
+      kerberosList: [],
+      mitKerbs: [],
       showKerberosSelect: false,
       individualChats: [],
       groupNameInput: "",
       selectedKerbs: [],
       showGroupForm: false,
-      mitKerbs: ["jdoe", "alum123", "khidalgo", "zhuang", "cfisher"],
       groupChatObjects: [],
       renamedGroups: [],
       renameInputs: {},
@@ -127,9 +127,23 @@ createApp({
     },
     
 
+    // async startIndividualChat(kerb) {
+    //   const chatId = `dm:${[kerb, this.$graffitiSession.value.actor].sort().join(":")}`;
+    //   this.individualChats.push(chatId);
+    //   await this.$graffiti.put({
+    //     value: {
+    //       activity: "Create",
+    //       object: { type: "DM", between: [kerb, this.$graffitiSession.value.actor], channel: chatId }
+    //     },
+    //     channels: ["mitchats"]
+    //   }, this.$graffitiSession.value);
+    //   this.showKerberosSelect = false;
+    // },
+
     async startIndividualChat(kerb) {
       const chatId = `dm:${[kerb, this.$graffitiSession.value.actor].sort().join(":")}`;
       this.individualChats.push(chatId);
+    
       await this.$graffiti.put({
         value: {
           activity: "Create",
@@ -137,8 +151,11 @@ createApp({
         },
         channels: ["mitchats"]
       }, this.$graffitiSession.value);
+    
       this.showKerberosSelect = false;
     },
+    
+    
 
     async submitGroupChat() {
       if (!this.groupNameInput || this.selectedKerbs.length === 0) return;
@@ -256,19 +273,43 @@ createApp({
 
 
 
+    // updateJoinedClassChats(objects) {
+    //   const byClass = {}; 
+    
+    //   objects.forEach(obj => {
+    //     const classChannel = obj.value.target;
+    //     if (!byClass[classChannel]) byClass[classChannel] = [];
+    //     byClass[classChannel].push(obj.actor);
+    //   });
+    
+      
+    //   this.joinedClassParticipants = byClass;
+    
+   
+    //   const myActor = this.$graffitiSession.value.actor;
+    //   const myJoins = objects.filter(obj => obj.actor === myActor);
+    //   const uniqueClasses = new Set();
+    //   myJoins.forEach(obj => {
+    //     const className = obj.value.target.replace("class:mit:", "");
+    //     uniqueClasses.add(className);
+    //   });
+    //   this.joinedClassChats = Array.from(uniqueClasses);
+    // },
+
     updateJoinedClassChats(objects) {
       const byClass = {}; 
     
       objects.forEach(obj => {
         const classChannel = obj.value.target;
         if (!byClass[classChannel]) byClass[classChannel] = [];
-        byClass[classChannel].push(obj.actor);
+        if (!byClass[classChannel].includes(obj.actor)) {
+          byClass[classChannel].push(obj.actor);
+        }
       });
     
-      
-      this.joinedClassParticipants = byClass;
+      this.joinedClassParticipants = { ...byClass }; // This triggers Vue reactivity
     
-   
+      // Update the local list as well
       const myActor = this.$graffitiSession.value.actor;
       const myJoins = objects.filter(obj => obj.actor === myActor);
       const uniqueClasses = new Set();
@@ -276,8 +317,11 @@ createApp({
         const className = obj.value.target.replace("class:mit:", "");
         uniqueClasses.add(className);
       });
+    
+      // 🔄 Update the list to trigger reactivity
       this.joinedClassChats = Array.from(uniqueClasses);
     },
+    
     
 
     updateIndividualChats(objects) {
@@ -307,24 +351,50 @@ createApp({
     },
 
     
+    // getChatParticipants(channel) {
+    //   if (!channel) {
+        
+    //     return [];
+    //   }
+    
+    //   if (channel.startsWith("group:")) {
+    //     const group = this.groupChatObjects.find(g => g.value.object.channel === channel);
+    //     return group ? group.value.object.members : [];
+    //   }
+    //   if (channel.startsWith("class:mit:")) {
+    //     return this.joinedClassParticipants[channel] || [];
+    //   }
+    //   if (channel.startsWith("dm:")) {
+    //     return channel.replace("dm:", "").split(":");
+    //   }
+    //   return [];
+    // },
+
     getChatParticipants(channel) {
       if (!channel) {
-        
         return [];
       }
     
       if (channel.startsWith("group:")) {
         const group = this.groupChatObjects.find(g => g.value.object.channel === channel);
-        return group ? group.value.object.members : [];
+        return group ? group.value.object.members.map(this.extractUsername) : [];
       }
       if (channel.startsWith("class:mit:")) {
         return this.joinedClassParticipants[channel] || [];
       }
       if (channel.startsWith("dm:")) {
-        return channel.replace("dm:", "").split(":");
+        // Get the participants and remove "https" and "id.inrupt.com"
+        const parts = channel.replace("dm:", "").split(":");
+        return parts.map(part => {
+          if (part.startsWith("https")) {
+            return this.extractUsername(part);
+          }
+          return part;
+        }).filter(p => p !== 'https');
       }
       return [];
     },
+    
     
 
     startEditProfile() {
@@ -485,17 +555,66 @@ createApp({
     }
     
     ,
-    getOtherUser(chat) {
-      if (!chat || !this.$graffitiSession.value?.actor) return "Unknown";
+    // getOtherUser(chat) {
+    //   if (!chat || !this.$graffitiSession.value?.actor) return "Unknown";
 
-      const currentUser = this.$graffitiSession.value.actor;
-      const parts = chat.replace("dm:", "").split(":");
+    //   const currentUser = this.$graffitiSession.value.actor;
+    //   const parts = chat.replace("dm:", "").split(":");
 
    
-      const otherUser = parts.find(p => p !== currentUser);
-      console.log("👤 Other user resolved as:", otherUser); 
-      return otherUser || "Unknown";
-    }, 
+    //   const otherUser = parts.find(p => p !== currentUser);
+    //   console.log("👤 Other user resolved as:", otherUser); 
+    //   return otherUser || "Unknown";
+    // }, 
+
+    // getOtherUser(chat) {
+    //   if (!chat || !this.$graffitiSession.value?.actor) return "Unknown";
+    
+    //   const currentUser = this.$graffitiSession.value.actor;
+    //   const parts = chat.replace("dm:", "").split(":");
+    
+    //   const otherUser = parts.find(p => p !== currentUser);
+    
+    //   if (otherUser.startsWith("https")) {
+    //     const username = otherUser.split("/").pop();
+    //     return username || "Unknown";
+    //   }
+    //   return otherUser || "Unknown";
+    // },
+
+    getOtherUser(chat) {
+      if (!chat || !this.$graffitiSession.value?.actor) return "Unknown";
+    
+      const currentUser = this.$graffitiSession.value.actor;
+      console.log("💡 Chat: ", chat);
+      console.log("💡 Current User: ", currentUser);
+    
+      // Extract all URLs from the string using regex
+      const urls = chat.match(/https?:\/\/[^\s:]+/g);
+      console.log("💡 Extracted URLs: ", urls);
+    
+      if (!urls || urls.length === 0) return "Unknown";
+    
+      // Find the one that is NOT the current user
+      const otherUser = urls.find(url => url !== currentUser);
+      console.log("💡 Other User Found: ", otherUser);
+    
+      if (!otherUser) return "Unknown";
+    
+      try {
+        const parsedUrl = new URL(otherUser);
+        const username = parsedUrl.pathname.split("/").pop();
+        console.log("💡 Extracted Username: ", username);
+        return username || "Unknown";
+      } catch (e) {
+        console.warn("Invalid URL format:", otherUser);
+        return "Unknown";
+      }
+    },
+    
+    
+    
+    
      
       getChatProfilePicture(channel) {
         if (channel.startsWith("dm:")) {
@@ -652,7 +771,50 @@ createApp({
             welcomeBox.style.animation = ""; 
           }, 10);
         }
+      },
+
+      async fetchNewMessages() {
+        const updatedObjects = await this.$graffiti.discover({
+          channels: [this.selectedChannel],
+          schema: {
+            properties: {
+              value: {
+                required: ['content', 'published'],
+                properties: {
+                  content: { type: 'string' },
+                  published: { type: 'number' }
+                }
+              }
+            }
+          }
+        });
+    
+        // Update the local list
+        this.chatMessages = updatedObjects.sort((a, b) => a.value.published - b.value.published);
+      }, 
+
+
+      extractUsername(webId) {
+        if (!webId) return "Unknown";
+        // This regex matches the last segment after the last '/' in the URL
+        const match = webId.match(/([^\/]+)$/);
+        return match ? match[0] : webId;
+      },
+
+      updateKerberosList(objects) {
+        const newUsers = new Set(); // To avoid duplicates
+        objects.forEach(obj => {
+          const actor = obj.actor;
+          if (actor) {
+            newUsers.add(actor);
+          }
+        });
+    
+        // Convert to array and assign it
+        this.kerberosList = Array.from(newUsers);
+        this.mitKerbs = Array.from(newUsers); // If you want to use the same list for mitKerbs
       }
+
 
       
       
@@ -681,9 +843,25 @@ createApp({
     
       this.profileForm.name = kerb;
     }
-  }
-  
 
+    this.pollingInterval = setInterval(() => {
+      if (this.selectedChannel) {
+        this.fetchNewMessages();
+      }
+    }, 2000); // Poll every 2 seconds
+  },
+
+  beforeUnmount() {
+    clearInterval(this.pollingInterval);
+  },
+
+  updated() {
+    const container = document.querySelector('.chat-messages');
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
+  },
+  
   
   
 })

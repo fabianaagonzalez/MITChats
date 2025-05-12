@@ -139,7 +139,7 @@
               <!-- Name + button side by side -->
               <div style="display: flex; align-items: center; gap: 12px; flex-grow: 1;">
                 <div style="font-size: 14px; color: #333;">
-                  {{ getChatDisplayName(chat.channel) }}
+                  {{ extractUsername(getChatDisplayName(chat.channel)) }}
                 </div>
                 <button @click="enterChat(chat.channel)">Enter</button>
                 <!-- Apply the class to your buttons -->
@@ -256,7 +256,8 @@
                 <!-- Name + button side by side -->
                 <div style="display: flex; align-items: center; gap: 12px; flex-grow: 1;">
                   <div style="font-size: 14px; color: #333;">
-                    {{ getOtherUser(chat) }}
+                    <!-- {{ getOtherUser(chat) }} -->
+                    {{ extractUsername(getChatDisplayName(chat)) }}
                   </div>
                   <button @click="enterChat(chat)">Enter</button>
                 </div>
@@ -299,7 +300,7 @@
               <button class="back-button" @click="exitProfile">← Back</button>
             </div>
             
-            <h2>{{ getChatDisplayName(selectedChannel) }}</h2>
+            <h2>{{ extractUsername(getChatDisplayName(selectedChannel)) }}</h2>
 
             <div class="profile-tabs">
               <button :class="{ active: profileTab === 'participants' }" @click="profileTab = 'participants'">Participants</button>
@@ -376,13 +377,13 @@
                       <profile-picture :src="getProfilePicture(participant)" size="40px" />
                     </div>
                     <div class="participant-details">
-                      <p>{{ participant }}</p>
+                      <p>{{ extractUsername(participant) }}</p>
                     </div>
                   </div>
             
                   <!-- ✅ Show button only if it's not your own Kerberos ID -->
                   <button 
-                    v-if="participant !== $graffitiSession.value.actor" 
+                    v-if="!selectedChannel.startsWith('dm:') && extractUsername(participant) !== extractUsername($graffitiSession.value.actor)" 
                     @click="openDirectMessage(participant)" 
                     class="text-button">
                     Text
@@ -466,12 +467,18 @@
 
         <!-- IF IN A CHAT -->
         <template v-else>
-          <div class="chat-view">
+          <div v-if="!selectedChannel" class="empty-state">
+            <p>Select a chat or create a new one to start messaging.</p>
+          </div>
+          
+          <div v-if="selectedChannel" class="chat-view">
             <div v-if="selectedChannel && !viewingProfile">
               <button class="back-button" @click="leaveChat">← Back</button>
             </div>
 
-            <h2 @click="viewProfile" style="cursor: pointer;">{{ getChatDisplayName(selectedChannel) }}</h2>
+            <h2 v-if="selectedChannel" @click="viewProfile" style="cursor: pointer;">{{ extractUsername(getChatDisplayName(selectedChannel)) }}</h2>
+
+            <!-- <h2 @click="viewProfile" style="cursor: pointer;">{{ extractUsername(getChatDisplayName(selectedChannel)) }}</h2> -->
 
             <div v-if="selectedChannel && selectedChannel.startsWith('group:')">
               <input type="text" v-model="renameInputs[selectedChannel]" placeholder="New group name" />
@@ -479,31 +486,24 @@
             </div>
 
             <graffiti-discover
-              v-slot="{ objects, isInitialPolling }"
-              :channels="[selectedChannel]"
-              :schema="{
-                properties: {
-                  value: {
-                    required: ['content', 'published'],
-                    properties: {
-                      content: { type: 'string' },
-                      published: { type: 'number' }
-                    }
+            v-slot="{ objects, isInitialPolling }"
+            autopoll
+            :channels="[selectedChannel]"
+            :schema="{
+              properties: {
+                value: {
+                  required: ['content', 'published'],
+                  properties: {
+                    content: { type: 'string' },
+                    published: { type: 'number' }
                   }
                 }
-              }"
-            >
+              }
+            }"
+          >
             <ul class="chat-messages">
               <li v-if="isInitialPolling" class="loading">Loading...</li>
-            
-              <!-- <li
-                v-for="object in objects.sort((a, b) => a.value.published - b.value.published)"
-                :key="object.url"
-                :class="{
-                  'my-message': object.actor === $graffitiSession.value.actor,
-                  'their-message': object.actor !== $graffitiSession.value.actor
-                }"
-              > -->
+          
               <li
                 v-for="object in objects.sort((a, b) => a.value.published - b.value.published)"
                 :key="object.url"
@@ -513,7 +513,6 @@
                   'their-message': object.actor !== $graffitiSession.value.actor
                 }"
               >
-
                 <template v-if="editingMessage === object">
                   <div class="bubble">
                     <input v-model="editContent" />
@@ -523,37 +522,40 @@
                     </div>
                   </div>
                 </template>
-            
+          
                 <template v-else>
-                  <div class="bubble">
+                  <div class="message-group">
                     <div class="meta">
-                      <span class="sender">{{ object.actor }} </span>
+                      <span class="sender">{{ extractUsername(object.actor) }} </span>
                       <span class="timestamp">{{ new Date(object.value.published).toLocaleTimeString() }}</span>
                     </div>
-                    <div class="content">{{ object.value.content }}</div>
-                    <div class="actions" v-if="object.actor === $graffitiSession.value.actor">
-                      <button @click="startEdit(object)">✏️</button>
-                      <button @click="deleteMessage(object)">🗑️</button>
+          
+                    <div class="bubble">
+                      <div class="content">{{ object.value.content }}</div>
+                      <div class="actions-wrapper">
+                        <div class="actions" v-if="object.actor === $graffitiSession.value.actor">
+                          <button @click="startEdit(object)" class="action-btn">✏️</button>
+                          <button @click="deleteMessage(object)" class="action-btn">🗑️</button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </template>
               </li>
             </ul>
-            
-            </graffiti-discover>
-
-            <template v-if="selectedChannel && !viewingProfile">
-              <form @submit.prevent="sendMessage($graffitiSession.value)">
-                <fieldset :disabled="sending">
-                  <input v-model="myMessage" placeholder="Type a message" ref="messageInput" />
-                  <input type="submit" :value="sending ? 'Sending...' : 'Send'" />
-                </fieldset>
-              </form>
+          </graffiti-discover>
           
-              <!-- <button class="back-button" @click="leaveChat">← Back</button> -->
-        
+          <!-- 🛠️ The form should NOT be inside a template, just directly rendered -->
+          <template v-if="selectedChannel && !viewingProfile">
+            <form @submit.prevent="sendMessage($graffitiSession.value)">
+              <fieldset :disabled="sending">
+                <input v-model="myMessage" placeholder="Type a message" ref="messageInput" />
+                <input type="submit" :value="sending ? 'Sending...' : 'Send'" />
+              </fieldset>
+            </form>
+          </template>
 
-            </template>
+
           </div>
         </template>
 
@@ -570,11 +572,11 @@
    
 
 
-        <div v-if="showKerberosSelect" class="modal">
+        <!-- <div v-if="showKerberosSelect" class="modal">
           <h3>Select a person to chat with:</h3>
           <ul>
             <li v-for="kerb in kerberosList" :key="kerb">
-              {{ kerb }}
+              {{ extractUsername(kerb) }}
               <button @click="startIndividualChat(kerb)">Start Chat</button>
             </li>
           </ul>
@@ -586,11 +588,41 @@
           <input v-model="groupNameInput" placeholder="Group Name" />
           <h4>Select Members</h4>
           <div v-for="kerb in mitKerbs" :key="kerb">
-            <label><input type="checkbox" :value="kerb" v-model="selectedKerbs" /> {{ kerb }}</label>
+            <label><input type="checkbox" :value="kerb" v-model="selectedKerbs" /> {{ extractUsername(kerb) }}</label>
+          </div>
+          <button @click="submitGroupChat">Create Group</button>
+          <button @click="showGroupForm = false">Cancel</button>
+        </div> -->
+
+        <!-- Select a person to chat with -->
+        <div v-if="showKerberosSelect" class="modal">
+          <h3>Select a person to chat with:</h3>
+          <ul>
+            <li v-for="kerb in kerberosList" :key="kerb">
+              {{ extractUsername(kerb) }}
+              <button @click="startIndividualChat(kerb)">Start Chat</button>
+            </li>
+          </ul>
+          <button @click="showKerberosSelect = false">Close</button>
+        </div>
+
+        <!-- Create Group Chat -->
+        <div v-if="showGroupForm" class="modal">
+          <h3>Create Group Chat</h3>
+          <input v-model="groupNameInput" placeholder="Group Name" />
+          <h4>Select Members</h4>
+          <div>
+            <div v-for="kerb in mitKerbs" :key="kerb">
+              <label>
+                <input type="checkbox" :value="kerb" v-model="selectedKerbs" /> 
+                {{ extractUsername(kerb) }}
+              </label>
+            </div>
           </div>
           <button @click="submitGroupChat">Create Group</button>
           <button @click="showGroupForm = false">Cancel</button>
         </div>
+
 
         <!-- Profile  -->
         <!-- <div class="profile-circle" @click="startEditProfile">
@@ -697,6 +729,22 @@
             {{ updateProfile(objects) }}
           </div>
         </graffiti-discover>
+
+
+        <graffiti-discover
+        v-slot="{ objects }"
+        :channels="['mitchats']"
+        :schema="{
+          properties: {
+            actor: { type: 'string' }
+          }
+        }"
+      >
+        <div style="display: none">
+          {{ updateKerberosList(objects) }}
+        </div>
+      </graffiti-discover>
+      
 
       </template>
     </template>
