@@ -3,6 +3,7 @@ import { GraffitiLocal } from "@graffiti-garden/implementation-local";
 import { GraffitiPlugin } from "@graffiti-garden/wrapper-vue";
 import ProfilePicture from './profile-picture.js';
 import { GraffitiRemote } from "@graffiti-garden/implementation-remote";
+import { useGraffitiDiscover } from "@graffiti-garden/wrapper-vue";
 
 
 
