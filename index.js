@@ -57,6 +57,8 @@ createApp({
       newLinkUrl: '',
       links: [],
 
+      profilePictures: {},
+
 
 
     
@@ -540,25 +542,91 @@ createApp({
       };
     },
     
-    getProfilePicture(chat) {
-      const otherUser = chat.replace("dm:", "").replace(this.$graffitiSession.value.actor, "").replace(":", "");
-      const local = localStorage.getItem(`profile-${otherUser}`);
+    // getProfilePicture(chat) {
+    //   const otherUser = chat.replace("dm:", "").replace(this.$graffitiSession.value.actor, "").replace(":", "");
+    //   const local = localStorage.getItem(`profile-${otherUser}`);
     
-      if (local) {
-        try {
-          const parsed = JSON.parse(local);
-          const pic = parsed.profile_picture;
-          if (pic) {
+    //   if (local) {
+    //     try {
+    //       const parsed = JSON.parse(local);
+    //       const pic = parsed.profile_picture;
+    //       if (pic) {
          
-            return pic.startsWith("data:image") ? pic : `data:image/jpeg;base64,${pic}`;
-          }
-        } catch (e) {
-          console.warn("⚠️ Couldn't parse profile:", local);
-        }
+    //         return pic.startsWith("data:image") ? pic : `data:image/jpeg;base64,${pic}`;
+    //       }
+    //     } catch (e) {
+    //       console.warn("⚠️ Couldn't parse profile:", local);
+    //     }
+    //   }
+    
+    //   return null;
+    // }
+
+    async getProfilePicture(webId) {
+      if (!webId) return null;
+    
+      // 🌟 Normalize the WebID
+      if (!webId.startsWith("http")) {
+        webId = `https://id.inrupt.com/${webId}`;
       }
     
-      return null;
+      console.log(`🔍 Looking for profile picture for: ${webId}`);
+    
+      try {
+        const objects = await this.$graffiti.discover({
+          channels: [webId],
+          schema: {
+            properties: {
+              value: {
+                required: ['profile_picture'],
+                properties: {
+                  profile_picture: { type: 'string' }
+                }
+              }
+            }
+          }
+        });
+    
+        if (objects.length > 0 && objects[0].value.profile_picture) {
+          let profilePic = objects[0].value.profile_picture;
+    
+          console.log(`🌐 Found profile picture URL: ${profilePic}`);
+    
+          // ✅ Check if it's HTTPS
+          if (profilePic.startsWith("http://")) {
+            const httpsUrl = profilePic.replace("http://", "https://");
+            profilePic = httpsUrl;
+          }
+    
+          // 🖼️ Cache and Return
+          this.profilePictures[webId] = profilePic;
+          return profilePic;
+        } else {
+          console.warn(`⚠️ No profile picture found for ${webId}`);
+          return null;
+        }
+      } catch (error) {
+        console.error(`🚫 Error fetching profile picture for ${webId}:`, error);
+        return null;
+      }
+    },
+    normalizeWebId(webId) {
+      if (!webId) {
+        console.warn("⚠️ Attempted to normalize an undefined WebID");
+        return null;
+      }
+    
+      if (!webId.startsWith("http")) {
+        return `https://id.inrupt.com/${webId}`;
+      }
+      return webId;
     }
+    
+    
+    
+    
+    
+    
     
     ,
     // getOtherUser(chat) {

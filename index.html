@@ -129,11 +129,15 @@
             >
               <!-- Profile Picture -->
               <div style="flex-shrink: 0;">
-                <profile-picture
+                <!-- <profile-picture
                   :src="getChatProfilePicture(chat.channel)"
                   :fallback="getChatFallback(chat.channel)"
                   size="40px"
-                />
+                /> -->
+
+                <profile-picture :src="getProfilePicture(normalizeWebId(participant))" size="40px" />
+
+
               </div>
 
               <!-- Name + button side by side -->

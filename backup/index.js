@@ -50,7 +50,13 @@ createApp({
       },
       joinedClassParticipants: {}, 
       notificationMessage: "",
-      notificationVisible: false
+      notificationVisible: false,
+
+
+      newLinkTitle: '',
+      newLinkUrl: '',
+      links: [],
+
 
 
     
@@ -813,8 +819,69 @@ createApp({
         // Convert to array and assign it
         this.kerberosList = Array.from(newUsers);
         this.mitKerbs = Array.from(newUsers); // If you want to use the same list for mitKerbs
-      }
+      },
 
+
+      async addLink() {
+        if (!this.newLinkTitle.trim() || !this.newLinkUrl.trim()) return;
+      
+        const newLink = {
+          title: this.newLinkTitle,
+          url: this.newLinkUrl,
+          sender: this.$graffitiSession.value.actor
+        };
+      
+        await this.$graffiti.put({
+          value: newLink,
+          channels: [this.selectedChannel]
+        }, this.$graffitiSession.value);
+      
+        this.newLinkTitle = "";
+        this.newLinkUrl = "";
+      },
+      
+      
+      // updateLinks(objects) {
+      //   this.links = objects
+      //     .filter(obj => obj.value.title && obj.value.url)
+      //     .map(obj => ({
+      //       title: obj.value.title,
+      //       url: obj.value.url
+      //     }));
+      // },
+
+      async updateLinks(objects) {
+        this.links = objects.map(obj => ({
+          title: obj.value.title,
+          url: obj.value.url,
+          sender: obj.actor,      // 🛠️ Include the sender from graffiti
+          graffitiObject: obj
+        }));
+      },
+      
+      
+
+      async startDeleteLink(link) {
+        const linkElement = document.querySelector(`[data-link-id="${link.url}"]`);
+      
+        if (linkElement) {
+          // 🌟 Apply a little animation (like the delete messages)
+          linkElement.classList.add("imploding");
+      
+          // 🌟 Wait for the animation to complete
+          await new Promise(resolve => setTimeout(resolve, 400));
+        }
+      
+        // 🌟 Perform the deletion from graffiti
+        await this.$graffiti.delete(link.graffitiObject, this.$graffitiSession.value);
+      
+        // 🌟 Remove from local state
+        this.links = this.links.filter(l => l.url !== link.url);
+      
+        console.log(`✅ Deleted link: ${link.url}`);
+      }
+      
+      
 
       
       

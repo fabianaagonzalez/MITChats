@@ -304,7 +304,12 @@
 
             <div class="profile-tabs">
               <button :class="{ active: profileTab === 'participants' }" @click="profileTab = 'participants'">Participants</button>
-              <button :class="{ active: profileTab === 'preferences' }" @click="profileTab = 'preferences'">Preferences</button>
+              <button 
+                :class="{ active: profileTab === 'links' }" 
+                @click="profileTab = 'links'">
+                Links
+              </button>
+
             </div>
 
             <!-- <div v-if="profileTab === 'participants'">
@@ -397,58 +402,87 @@
             
 
 
-            <div v-if="profileTab === 'preferences'" class="preferences-panel">
-              <div class="preference-group">
-                <h4>Time To Study</h4>
-                <button
-                  v-for="option in ['Morning', 'Afternoon', 'Evening']"
-                  :key="option"
-                  :class="{ selected: profileForm.preferences.study_time === option }"
-                  @click="profileForm.preferences.study_time = option"
-                >{{ option }}</button>
-              </div>
+            <div v-if="profileTab === 'links'" class="links-panel">
+              <h3>Useful Links</h3>
             
-              <div class="preference-group">
-                <h4>Meeting Style</h4>
-                <button
-                  v-for="option in ['In-person', 'Virtual', 'Hybrid']"
-                  :key="option"
-                  :class="{ selected: profileForm.preferences.meeting_style === option }"
-                  @click="profileForm.preferences.meeting_style = option"
-                >{{ option }}</button>
-              </div>
+              <form @submit.prevent="addLink">
+                <input 
+                  v-model="newLinkTitle" 
+                  placeholder="Link Title" 
+                  required 
+                  style="margin-bottom: 8px;"
+                />
+                <input 
+                  v-model="newLinkUrl" 
+                  placeholder="Link URL (https://...)" 
+                  required 
+                  style="margin-bottom: 8px;"
+                />
+                <button type="submit">Add Link</button>
+              </form>
             
-              <div class="preference-group">
-                <h4>Meeting Location</h4>
-                <button
-                  v-for="option in ['Coffee shop', 'Library', 'Park']"
-                  :key="option"
-                  :class="{ selected: profileForm.preferences.location === option }"
-                  @click="profileForm.preferences.location = option"
-                >{{ option }}</button>
-              </div>
-            
-              <div class="preference-group">
-                <h4>Group Size</h4>
-                <button
-                  v-for="option in ['2 people', 'Small group', 'Larger team']"
-                  :key="option"
-                  :class="{ selected: profileForm.preferences.group_size === option }"
-                  @click="profileForm.preferences.group_size = option"
-                >{{ option }}</button>
-              </div>
-            
-              <div style="text-align: center; margin-top: 12px;">
-                <!-- <button class="save-button" @click="saveProfile">Save Preferences</button> -->
-                <!-- <button class="save-button" @click="savePreferencesForChat">Save Preferences</button> -->
-                <button class="save-preferences-button" @click="savePreferencesForChat">💾 Save Preferences</button>
+              <!-- <ul style="margin-top: 12px;">
+                <li 
+                  v-for="link in links" 
+                  :key="link.url" 
+                  style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;"
+                >
+                  <div style="display: flex; flex-direction: column;">
+                    <a 
+                      :href="link.url" 
+                      target="_blank" 
+                      style="color: #1a73e8; text-decoration: underline; margin-bottom: 4px;"
+                    >
+                      {{ link.title }}
+                    </a>
+                    <span style="font-size: 12px; color: gray;">
+                      Shared by: {{ extractUsername(link.sender) }}
+                    </span>
+                  </div>
+                  <button 
+                    @click="startDeleteLink(link)" 
+                    style="background-color: #ff4d4d; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;"
+                  >
+                    Delete
+                  </button>
+                </li>
+              </ul> -->
 
-                <div v-if="notificationVisible" class="notification">
-                  {{ notificationMessage }}
-                </div>
 
-              </div>
+              <ul style="margin-top: 12px;">
+                <li 
+                  v-for="link in links" 
+                  :key="link.url" 
+                  style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;"
+                >
+                  <div style="display: flex; flex-direction: column;">
+                    <a 
+                      :href="link.url" 
+                      target="_blank" 
+                      style="color: #1a73e8; text-decoration: underline; margin-bottom: 4px;"
+                    >
+                      {{ link.title }}
+                    </a>
+                    <span style="font-size: 12px; color: gray;">
+                      Shared by: {{ extractUsername(link.sender) }}
+                    </span>
+                  </div>
+              
+                  <!-- Only show the delete button if the link was created by the current user -->
+                  <button 
+                    v-if="link.sender === $graffitiSession.value.actor"
+                    @click="startDeleteLink(link)" 
+                    style="background-color: #ff4d4d; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;"
+                  >
+                    Delete
+                  </button>
+                </li>
+              </ul>
+              
+              
+              
             </div>
+            
 
             
             
@@ -476,8 +510,9 @@
               <button class="back-button" @click="leaveChat">← Back</button>
             </div>
 
-            <h2 v-if="selectedChannel" @click="viewProfile" style="cursor: pointer;">{{ extractUsername(getChatDisplayName(selectedChannel)) }}</h2>
-
+            <h2 v-if="selectedChannel" class="chat-name" @click="viewProfile" style="cursor: pointer;" title="Click to view Participants and Preferences">{{ extractUsername(getChatDisplayName(selectedChannel)) }}
+            </h2>
+            
             <!-- <h2 @click="viewProfile" style="cursor: pointer;">{{ extractUsername(getChatDisplayName(selectedChannel)) }}</h2> -->
 
             <div v-if="selectedChannel && selectedChannel.startsWith('group:')">
@@ -744,6 +779,25 @@
           {{ updateKerberosList(objects) }}
         </div>
       </graffiti-discover>
+
+      <graffiti-discover
+        v-slot="{ objects }"
+        :channels="[selectedChannel]"
+        :schema="{
+          properties: {
+            value: {
+              required: ['title', 'url'],
+              properties: {
+                title: { type: 'string' },
+                url: { type: 'string' }
+              }
+            }
+          }
+        }"
+      >
+        <div style="display: none">{{ updateLinks(objects) }}</div>
+      </graffiti-discover>
+
       
 
       </template>
