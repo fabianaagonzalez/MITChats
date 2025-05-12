@@ -1,4 +1,4 @@
-import { createApp } from "vue";
+import { createApp, ref } from "vue";
 import { GraffitiLocal } from "@graffiti-garden/implementation-local";
 import { GraffitiPlugin } from "@graffiti-garden/wrapper-vue";
 import ProfilePicture from './profile-picture.js';
@@ -10,23 +10,11 @@ import { useGraffitiDiscover } from "@graffiti-garden/wrapper-vue";
 createApp({
 
   setup() {
-    const { objects: usersObjects } = useGraffitiDiscover(
-      ['mitchats'],
-      {
-        properties: {
-          value: {
-            required: ['activity'],
-            properties: {
-              activity: { const: 'Login' }
-            }
-          }
-        }
-      }
-    );
+    const usersObjects = ref([]);
   
-    console.log("Discovered Users: ", usersObjects); // ✅ Check if you are receiving users
     return { usersObjects };
   },
+  
   
   components: {
     ProfilePicture

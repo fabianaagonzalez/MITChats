@@ -729,6 +729,26 @@
             {{ updateProfile(objects) }}
           </div>
         </graffiti-discover>
+        
+        <graffiti-discover
+        v-slot="{ objects }"
+        :channels="['mitchats']"
+        :schema="{
+          properties: {
+            value: {
+              required: ['activity'],
+              properties: {
+                activity: { const: 'Login' }
+              }
+            }
+          }
+        }"
+      >
+        <div style="display: none">
+          {{ usersObjects = objects }}
+        </div>
+      </graffiti-discover>
+      
 
 
 
