@@ -50,7 +50,8 @@ createApp({
       },
       joinedClassParticipants: {}, 
       notificationMessage: "",
-      notificationVisible: false
+      notificationVisible: false,
+      allLoggedSolidUsers: []
 
 
     
@@ -98,6 +99,16 @@ createApp({
       const parts = webId.split("/");
       return parts[parts.length - 1];  // Grabs the last part of the URL
     },
+
+    updateUserList(objects) {
+      const uniqueUsers = new Set();
+      objects.forEach(obj => {
+        if (obj.value.object.webId) {
+          uniqueUsers.add(obj.value.object.webId);
+        }
+      });
+      this.allLoggedSolidUsers = Array.from(uniqueUsers);
+    }, 
     toggleFabMenu() {
       this.fabMenuOpen = !this.fabMenuOpen;
     
@@ -424,19 +435,20 @@ createApp({
     
       await this.$graffiti.login({ actor: solidWebId });
     
-      // 🌟 Save it to localStorage if it's not already there
-      const loggedUsers = JSON.parse(localStorage.getItem('loggedSolidUsers')) || [];
-      if (!loggedUsers.includes(solidWebId)) {
-        loggedUsers.push(solidWebId);
-        localStorage.setItem('loggedSolidUsers', JSON.stringify(loggedUsers));
-      }
+      // 🌟 Send the Solid WebID to the `mitchats` channel
+      await this.$graffiti.put({
+        value: {
+          activity: "Login",
+          object: { type: "User", webId: solidWebId }
+        },
+        channels: ["mitchats"]
+      }, this.$graffitiSession.value);
     
       this.selectedChannel = null;
       this.viewingProfile = false;
       this.editingProfile = false;
       this.activeTab = 'all';
       this.resetProfileForm();
-    
       this.loadProfileFromLocalStorage();
     },
     
