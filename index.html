@@ -256,7 +256,8 @@
                 <!-- Name + button side by side -->
                 <div style="display: flex; align-items: center; gap: 12px; flex-grow: 1;">
                   <div style="font-size: 14px; color: #333;">
-                    {{ getOtherUser(chat) }}
+                    <!-- {{ getOtherUser(chat) }} -->
+                    {{ extractUsername(getChatDisplayName(chat)) }}
                   </div>
                   <button @click="enterChat(chat)">Enter</button>
                 </div>
@@ -382,7 +383,7 @@
             
                   <!-- ✅ Show button only if it's not your own Kerberos ID -->
                   <button 
-                    v-if="participant !== $graffitiSession.value.actor" 
+                    v-if="!selectedChannel.startsWith('dm:') && extractUsername(participant) !== extractUsername($graffitiSession.value.actor)" 
                     @click="openDirectMessage(participant)" 
                     class="text-button">
                     Text
@@ -571,7 +572,7 @@
    
 
 
-        <div v-if="showKerberosSelect" class="modal">
+        <!-- <div v-if="showKerberosSelect" class="modal">
           <h3>Select a person to chat with:</h3>
           <ul>
             <li v-for="kerb in kerberosList" :key="kerb">
@@ -591,7 +592,37 @@
           </div>
           <button @click="submitGroupChat">Create Group</button>
           <button @click="showGroupForm = false">Cancel</button>
+        </div> -->
+
+        <!-- Select a person to chat with -->
+        <div v-if="showKerberosSelect" class="modal">
+          <h3>Select a person to chat with:</h3>
+          <ul>
+            <li v-for="kerb in kerberosList" :key="kerb">
+              {{ extractUsername(kerb) }}
+              <button @click="startIndividualChat(kerb)">Start Chat</button>
+            </li>
+          </ul>
+          <button @click="showKerberosSelect = false">Close</button>
         </div>
+
+        <!-- Create Group Chat -->
+        <div v-if="showGroupForm" class="modal">
+          <h3>Create Group Chat</h3>
+          <input v-model="groupNameInput" placeholder="Group Name" />
+          <h4>Select Members</h4>
+          <div>
+            <div v-for="kerb in mitKerbs" :key="kerb">
+              <label>
+                <input type="checkbox" :value="kerb" v-model="selectedKerbs" /> 
+                {{ extractUsername(kerb) }}
+              </label>
+            </div>
+          </div>
+          <button @click="submitGroupChat">Create Group</button>
+          <button @click="showGroupForm = false">Cancel</button>
+        </div>
+
 
         <!-- Profile  -->
         <!-- <div class="profile-circle" @click="startEditProfile">

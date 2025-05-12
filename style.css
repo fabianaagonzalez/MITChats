@@ -1020,10 +1020,35 @@ body {
 }
 
 
+/* Modal Scrollable List */
 .modal ul {
-  max-height: 60vh; /* Limit the height of the list */
-  overflow-y: auto; /* Scrollbar if it's too long */
+  max-height: 300px; /* Set a maximum height */
+  overflow-y: auto; /* Enable vertical scroll */
+  margin-top: 10px;
+  padding-right: 5px;
 }
+
+/* Custom scrollbar styling */
+.modal ul::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal ul::-webkit-scrollbar-thumb {
+  background-color: #a31f34; /* MIT red */
+  border-radius: 4px;
+}
+
+.modal ul::-webkit-scrollbar-thumb:hover {
+  background-color: #8c1b2c;
+}
+
+/* For the list of checkboxes in the group chat modal */
+.modal div {
+  max-height: 300px; /* Set a maximum height */
+  overflow-y: auto; /* Enable vertical scroll */
+  padding-right: 5px;
+}
+
 
 /* Implode animation */
 @keyframes implode {

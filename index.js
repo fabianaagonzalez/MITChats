@@ -351,24 +351,50 @@ createApp({
     },
 
     
+    // getChatParticipants(channel) {
+    //   if (!channel) {
+        
+    //     return [];
+    //   }
+    
+    //   if (channel.startsWith("group:")) {
+    //     const group = this.groupChatObjects.find(g => g.value.object.channel === channel);
+    //     return group ? group.value.object.members : [];
+    //   }
+    //   if (channel.startsWith("class:mit:")) {
+    //     return this.joinedClassParticipants[channel] || [];
+    //   }
+    //   if (channel.startsWith("dm:")) {
+    //     return channel.replace("dm:", "").split(":");
+    //   }
+    //   return [];
+    // },
+
     getChatParticipants(channel) {
       if (!channel) {
-        
         return [];
       }
     
       if (channel.startsWith("group:")) {
         const group = this.groupChatObjects.find(g => g.value.object.channel === channel);
-        return group ? group.value.object.members : [];
+        return group ? group.value.object.members.map(this.extractUsername) : [];
       }
       if (channel.startsWith("class:mit:")) {
         return this.joinedClassParticipants[channel] || [];
       }
       if (channel.startsWith("dm:")) {
-        return channel.replace("dm:", "").split(":");
+        // Get the participants and remove "https" and "id.inrupt.com"
+        const parts = channel.replace("dm:", "").split(":");
+        return parts.map(part => {
+          if (part.startsWith("https")) {
+            return this.extractUsername(part);
+          }
+          return part;
+        }).filter(p => p !== 'https');
       }
       return [];
     },
+    
     
 
     startEditProfile() {
@@ -541,20 +567,52 @@ createApp({
     //   return otherUser || "Unknown";
     // }, 
 
+    // getOtherUser(chat) {
+    //   if (!chat || !this.$graffitiSession.value?.actor) return "Unknown";
+    
+    //   const currentUser = this.$graffitiSession.value.actor;
+    //   const parts = chat.replace("dm:", "").split(":");
+    
+    //   const otherUser = parts.find(p => p !== currentUser);
+    
+    //   if (otherUser.startsWith("https")) {
+    //     const username = otherUser.split("/").pop();
+    //     return username || "Unknown";
+    //   }
+    //   return otherUser || "Unknown";
+    // },
+
     getOtherUser(chat) {
       if (!chat || !this.$graffitiSession.value?.actor) return "Unknown";
     
       const currentUser = this.$graffitiSession.value.actor;
-      const parts = chat.replace("dm:", "").split(":");
+      console.log("💡 Chat: ", chat);
+      console.log("💡 Current User: ", currentUser);
     
-      const otherUser = parts.find(p => p !== currentUser);
+      // Extract all URLs from the string using regex
+      const urls = chat.match(/https?:\/\/[^\s:]+/g);
+      console.log("💡 Extracted URLs: ", urls);
     
-      if (otherUser.startsWith("https")) {
-        const username = otherUser.split("/").pop();
+      if (!urls || urls.length === 0) return "Unknown";
+    
+      // Find the one that is NOT the current user
+      const otherUser = urls.find(url => url !== currentUser);
+      console.log("💡 Other User Found: ", otherUser);
+    
+      if (!otherUser) return "Unknown";
+    
+      try {
+        const parsedUrl = new URL(otherUser);
+        const username = parsedUrl.pathname.split("/").pop();
+        console.log("💡 Extracted Username: ", username);
         return username || "Unknown";
+      } catch (e) {
+        console.warn("Invalid URL format:", otherUser);
+        return "Unknown";
       }
-      return otherUser || "Unknown";
     },
+    
+    
     
     
      
