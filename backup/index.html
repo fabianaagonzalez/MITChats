@@ -479,23 +479,31 @@
             </div>
 
             <graffiti-discover
-            v-slot="{ objects, isInitialPolling }"
-            :channels="[selectedChannel]"
-            :schema="{
-              properties: {
-                value: {
-                  required: ['content', 'published'],
-                  properties: {
-                    content: { type: 'string' },
-                    published: { type: 'number' }
+              v-slot="{ objects, isInitialPolling }"
+              :channels="[selectedChannel]"
+              :schema="{
+                properties: {
+                  value: {
+                    required: ['content', 'published'],
+                    properties: {
+                      content: { type: 'string' },
+                      published: { type: 'number' }
+                    }
                   }
                 }
-              }
-            }"
-          >
+              }"
+            >
             <ul class="chat-messages">
               <li v-if="isInitialPolling" class="loading">Loading...</li>
-          
+            
+              <!-- <li
+                v-for="object in objects.sort((a, b) => a.value.published - b.value.published)"
+                :key="object.url"
+                :class="{
+                  'my-message': object.actor === $graffitiSession.value.actor,
+                  'their-message': object.actor !== $graffitiSession.value.actor
+                }"
+              > -->
               <li
                 v-for="object in objects.sort((a, b) => a.value.published - b.value.published)"
                 :key="object.url"
@@ -505,6 +513,7 @@
                   'their-message': object.actor !== $graffitiSession.value.actor
                 }"
               >
+
                 <template v-if="editingMessage === object">
                   <div class="bubble">
                     <input v-model="editContent" />
@@ -514,40 +523,37 @@
                     </div>
                   </div>
                 </template>
-          
+            
                 <template v-else>
-                  <div class="message-group">
+                  <div class="bubble">
                     <div class="meta">
                       <span class="sender">{{ object.actor }} </span>
                       <span class="timestamp">{{ new Date(object.value.published).toLocaleTimeString() }}</span>
                     </div>
-          
-                    <div class="bubble">
-                      <div class="content">{{ object.value.content }}</div>
-                      <div class="actions-wrapper">
-                        <div class="actions" v-if="object.actor === $graffitiSession.value.actor">
-                          <button @click="startEdit(object)" class="action-btn">✏️</button>
-                          <button @click="deleteMessage(object)" class="action-btn">🗑️</button>
-                        </div>
-                      </div>
+                    <div class="content">{{ object.value.content }}</div>
+                    <div class="actions" v-if="object.actor === $graffitiSession.value.actor">
+                      <button @click="startEdit(object)">✏️</button>
+                      <button @click="deleteMessage(object)">🗑️</button>
                     </div>
                   </div>
                 </template>
               </li>
             </ul>
-          </graffiti-discover>
+            
+            </graffiti-discover>
+
+            <template v-if="selectedChannel && !viewingProfile">
+              <form @submit.prevent="sendMessage($graffitiSession.value)">
+                <fieldset :disabled="sending">
+                  <input v-model="myMessage" placeholder="Type a message" ref="messageInput" />
+                  <input type="submit" :value="sending ? 'Sending...' : 'Send'" />
+                </fieldset>
+              </form>
           
-          <!-- 🛠️ The form should NOT be inside a template, just directly rendered -->
-          <template v-if="selectedChannel && !viewingProfile">
-            <form @submit.prevent="sendMessage($graffitiSession.value)">
-              <fieldset :disabled="sending">
-                <input v-model="myMessage" placeholder="Type a message" ref="messageInput" />
-                <input type="submit" :value="sending ? 'Sending...' : 'Send'" />
-              </fieldset>
-            </form>
-          </template>
+              <!-- <button class="back-button" @click="leaveChat">← Back</button> -->
+        
 
-
+            </template>
           </div>
         </template>
 

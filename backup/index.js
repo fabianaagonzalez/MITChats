@@ -256,43 +256,19 @@ createApp({
 
 
 
-    // updateJoinedClassChats(objects) {
-    //   const byClass = {}; 
-    
-    //   objects.forEach(obj => {
-    //     const classChannel = obj.value.target;
-    //     if (!byClass[classChannel]) byClass[classChannel] = [];
-    //     byClass[classChannel].push(obj.actor);
-    //   });
-    
-      
-    //   this.joinedClassParticipants = byClass;
-    
-   
-    //   const myActor = this.$graffitiSession.value.actor;
-    //   const myJoins = objects.filter(obj => obj.actor === myActor);
-    //   const uniqueClasses = new Set();
-    //   myJoins.forEach(obj => {
-    //     const className = obj.value.target.replace("class:mit:", "");
-    //     uniqueClasses.add(className);
-    //   });
-    //   this.joinedClassChats = Array.from(uniqueClasses);
-    // },
-
     updateJoinedClassChats(objects) {
       const byClass = {}; 
     
       objects.forEach(obj => {
         const classChannel = obj.value.target;
         if (!byClass[classChannel]) byClass[classChannel] = [];
-        if (!byClass[classChannel].includes(obj.actor)) {
-          byClass[classChannel].push(obj.actor);
-        }
+        byClass[classChannel].push(obj.actor);
       });
     
-      this.joinedClassParticipants = { ...byClass }; // This triggers Vue reactivity
+      
+      this.joinedClassParticipants = byClass;
     
-      // Update the local list as well
+   
       const myActor = this.$graffitiSession.value.actor;
       const myJoins = objects.filter(obj => obj.actor === myActor);
       const uniqueClasses = new Set();
@@ -300,11 +276,8 @@ createApp({
         const className = obj.value.target.replace("class:mit:", "");
         uniqueClasses.add(className);
       });
-    
-      // 🔄 Update the list to trigger reactivity
       this.joinedClassChats = Array.from(uniqueClasses);
     },
-    
     
 
     updateIndividualChats(objects) {
