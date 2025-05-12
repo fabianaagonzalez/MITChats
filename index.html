@@ -421,7 +421,7 @@
                 <button type="submit">Add Link</button>
               </form>
             
-              <ul style="margin-top: 12px;">
+              <!-- <ul style="margin-top: 12px;">
                 <li 
                   v-for="link in links" 
                   :key="link.url" 
@@ -446,7 +446,39 @@
                     Delete
                   </button>
                 </li>
+              </ul> -->
+
+
+              <ul style="margin-top: 12px;">
+                <li 
+                  v-for="link in links" 
+                  :key="link.url" 
+                  style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;"
+                >
+                  <div style="display: flex; flex-direction: column;">
+                    <a 
+                      :href="link.url" 
+                      target="_blank" 
+                      style="color: #1a73e8; text-decoration: underline; margin-bottom: 4px;"
+                    >
+                      {{ link.title }}
+                    </a>
+                    <span style="font-size: 12px; color: gray;">
+                      Shared by: {{ extractUsername(link.sender) }}
+                    </span>
+                  </div>
+              
+                  <!-- Only show the delete button if the link was created by the current user -->
+                  <button 
+                    v-if="link.sender === $graffitiSession.value.actor"
+                    @click="startDeleteLink(link)" 
+                    style="background-color: #ff4d4d; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;"
+                  >
+                    Delete
+                  </button>
+                </li>
               </ul>
+              
               
               
             </div>
