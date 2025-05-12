@@ -739,11 +739,7 @@
               properties: {
                 activity: { const: 'Login' },
                 object: {
-                  required: ['type', 'webId'],
-                  properties: {
-                    type: { const: 'User' },
-                    webId: { type: 'string' }
-                  }
+                  type: 'object'
                 }
               }
             }
@@ -752,6 +748,8 @@
       >
         <div style="display: none">{{ updateUserList(objects) }}</div>
       </graffiti-discover>
+      
+       
       
 
       </template>

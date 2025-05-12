@@ -60,10 +60,10 @@ createApp({
   },
 
   computed: {
-    allLoggedSolidUsers() {
-      const users = JSON.parse(localStorage.getItem('loggedSolidUsers')) || [];
-      return [...new Set(users)];
-    },
+    // allLoggedSolidUsers() {
+    //   const users = JSON.parse(localStorage.getItem('loggedSolidUsers')) || [];
+    //   return [...new Set(users)];
+    // },
     allChats() {
       const all = [];
 
@@ -101,14 +101,17 @@ createApp({
     },
 
     updateUserList(objects) {
-      const uniqueUsers = new Set();
+      console.log("Updating User List with:", objects); // 🔍 Add this for debugging
       objects.forEach(obj => {
-        if (obj.value.object.webId) {
-          uniqueUsers.add(obj.value.object.webId);
+        if (obj.value.object && obj.value.object.webId) {
+          if (!this.allLoggedSolidUsers.includes(obj.value.object.webId)) {
+            this.allLoggedSolidUsers.push(obj.value.object.webId);
+          }
         }
       });
-      this.allLoggedSolidUsers = Array.from(uniqueUsers);
-    }, 
+      console.log("Current Solid User List:", this.allLoggedSolidUsers);
+   },
+    
     toggleFabMenu() {
       this.fabMenuOpen = !this.fabMenuOpen;
     
