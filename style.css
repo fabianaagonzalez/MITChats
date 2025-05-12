@@ -997,23 +997,6 @@ body {
   transform: scale(1.05);
 }
 
-/* Update your existing CSS for .modal */
-.modal {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-  z-index: 1000;
-  max-height: 80vh; /* Limit the height */
-  /* overflow-y: auto; Allow scrolling if content is too big */
-  opacity: 0;
-  animation: fadeIn 0.3s forwards;
-}
-
 /* Smooth fade-in animation */
 /* @keyframes fadeIn {
   to {
