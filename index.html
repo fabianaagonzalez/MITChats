@@ -598,6 +598,7 @@
           <button @click="showGroupForm = false">Cancel</button>
         </div>
         
+        
 
         <div v-if="showKerberosSelect" class="modal">
           <h3>Select a person to chat with:</h3>
@@ -729,25 +730,7 @@
         </graffiti-discover>
 
 
-        <graffiti-discover
-        v-slot="{ objects }"
-        :channels="['mitchats']"
-        :schema="{
-          properties: {
-            value: {
-              required: ['activity', 'object'],
-              properties: {
-                activity: { const: 'Login' },
-                object: {
-                  type: 'object'
-                }
-              }
-            }
-          }
-        }"
-      >
-        <div style="display: none">{{ updateUserList(objects) }}</div>
-      </graffiti-discover>
+
       
        
       

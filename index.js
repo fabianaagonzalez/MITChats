@@ -7,6 +7,26 @@ import { GraffitiRemote } from "@graffiti-garden/implementation-remote";
 
 
 createApp({
+
+  setup() {
+    const { objects: usersObjects } = useGraffitiDiscover(
+      ['mitchats'],
+      {
+        properties: {
+          value: {
+            required: ['activity'],
+            properties: {
+              activity: { const: 'Login' }
+            }
+          }
+        }
+      }
+    );
+  
+    console.log("Discovered Users: ", usersObjects); // ✅ Check if you are receiving users
+    return { usersObjects };
+  },
+  
   components: {
     ProfilePicture
   },
@@ -64,6 +84,10 @@ createApp({
     //   const users = JSON.parse(localStorage.getItem('loggedSolidUsers')) || [];
     //   return [...new Set(users)];
     // },
+
+    allLoggedSolidUsers() {
+      return this.usersObjects.map(obj => obj.actor);
+    },
     allChats() {
       const all = [];
 
@@ -100,17 +124,17 @@ createApp({
       return parts[parts.length - 1];  // Grabs the last part of the URL
     },
 
-    updateUserList(objects) {
-      console.log("Updating User List with:", objects); // 🔍 Add this for debugging
-      objects.forEach(obj => {
-        if (obj.value.object && obj.value.object.webId) {
-          if (!this.allLoggedSolidUsers.includes(obj.value.object.webId)) {
-            this.allLoggedSolidUsers.push(obj.value.object.webId);
-          }
-        }
-      });
-      console.log("Current Solid User List:", this.allLoggedSolidUsers);
-   },
+  //   updateUserList(objects) {
+  //     console.log("Updating User List with:", objects); // 🔍 Add this for debugging
+  //     objects.forEach(obj => {
+  //       if (obj.value.object && obj.value.object.webId) {
+  //         if (!this.allLoggedSolidUsers.includes(obj.value.object.webId)) {
+  //           this.allLoggedSolidUsers.push(obj.value.object.webId);
+  //         }
+  //       }
+  //     });
+  //     console.log("Current Solid User List:", this.allLoggedSolidUsers);
+  //  },
     
     toggleFabMenu() {
       this.fabMenuOpen = !this.fabMenuOpen;
@@ -439,13 +463,23 @@ createApp({
       await this.$graffiti.login({ actor: solidWebId });
     
       // 🌟 Send the Solid WebID to the `mitchats` channel
+      // await this.$graffiti.put({
+      //   value: {
+      //     activity: "Login",
+      //     object: { type: "User", webId: solidWebId }
+      //   },
+      //   channels: ["mitchats"]
+      // }, this.$graffitiSession.value);
+
       await this.$graffiti.put({
         value: {
           activity: "Login",
-          object: { type: "User", webId: solidWebId }
+          actor: solidWebId,
+          published: Date.now()
         },
-        channels: ["mitchats"]
+        channels: ["users"]
       }, this.$graffitiSession.value);
+      
     
       this.selectedChannel = null;
       this.viewingProfile = false;
