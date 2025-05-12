@@ -679,7 +679,28 @@ createApp({
             welcomeBox.style.animation = ""; 
           }, 10);
         }
+      },
+
+      async fetchNewMessages() {
+        const updatedObjects = await this.$graffiti.discover({
+          channels: [this.selectedChannel],
+          schema: {
+            properties: {
+              value: {
+                required: ['content', 'published'],
+                properties: {
+                  content: { type: 'string' },
+                  published: { type: 'number' }
+                }
+              }
+            }
+          }
+        });
+    
+        // Update the local list
+        this.chatMessages = updatedObjects.sort((a, b) => a.value.published - b.value.published);
       }
+
 
       
       
@@ -708,9 +729,25 @@ createApp({
     
       this.profileForm.name = kerb;
     }
-  }
-  
 
+    this.pollingInterval = setInterval(() => {
+      if (this.selectedChannel) {
+        this.fetchNewMessages();
+      }
+    }, 2000); // Poll every 2 seconds
+  },
+
+  beforeUnmount() {
+    clearInterval(this.pollingInterval);
+  },
+
+  updated() {
+    const container = document.querySelector('.chat-messages');
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
+  },
+  
   
   
 })
